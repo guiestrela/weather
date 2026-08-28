@@ -341,6 +341,10 @@ Panel {
     return root.dayName(dateString).slice(0, 3).toUpperCase()
   }
 
+  function showDailyDetails(dateString) {
+    return root.forecastDayLabel(dateString) !== "YESTERDAY"
+  }
+
   function forecastPrecipitation(day) {
     if (!day || day.precipitationProbability === undefined || day.precipitationProbability === null || day.precipitationProbability === "") return ""
     return Math.round(Number(day.precipitationProbability)) + "% rain"
@@ -879,6 +883,7 @@ Panel {
 
               Text {
                 width: Style.space(64)
+                opacity: root.showDailyDetails(modelData.date) ? 1 : 0
                 text: root.forecastPrecipitation(modelData) || "—"
                 color: Qt.darker(root.bar.foreground, 1.3)
                 font.family: root.bar.fontFamily
@@ -889,6 +894,7 @@ Panel {
 
               Text {
                 width: Style.space(42)
+                opacity: root.showDailyDetails(modelData.date) ? 1 : 0
                 text: root.forecastIcon(modelData, false)
                 color: root.bar.foreground
                 font.family: root.bar.fontFamily
@@ -899,6 +905,7 @@ Panel {
 
               Text {
                 width: Style.space(42)
+                opacity: root.showDailyDetails(modelData.date) ? 1 : 0
                 text: root.forecastIcon(modelData, true)
                 color: Qt.darker(root.bar.foreground, 1.15)
                 font.family: root.bar.fontFamily
