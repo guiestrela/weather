@@ -133,6 +133,7 @@ Panel {
   readonly property var current: (hasConfiguredCoordinates && openMeteoCurrent) ? openMeteoCurrent : ((report && report.current_condition && report.current_condition[0]) ? report.current_condition[0] : openMeteoCurrent)
   readonly property var areaInfo: report && report.nearest_area && report.nearest_area[0] ? report.nearest_area[0] : null
   readonly property var forecastDays: buildForecastDays()
+  readonly property var forecastTimeline: Model.buildForecastTimeline(report, dailyForecastReport, Qt.formatDate(new Date(), "yyyy-MM-dd"))
   readonly property var todayForecast: Model.todayForecast(report, dailyForecastReport, Qt.formatDate(new Date(), "yyyy-MM-dd"))
   readonly property var todayHourlyForecast: Model.openMeteoTodayHourlyForecast(dailyForecastReport, Qt.formatDate(new Date(), "yyyy-MM-dd"))
   readonly property var activities: Model.activityForecast(openMeteoCurrent, todayForecast)
@@ -182,8 +183,9 @@ Panel {
       + "&longitude=" + encodeURIComponent(String(lon))
       + "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max"
       + "&hourly=temperature_2m,weather_code,is_day,precipitation_probability"
+      + "&past_days=1"
       + "&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code,is_day"
-      + "&forecast_days=8"
+      + "&forecast_days=6"
       + "&timezone=auto"
     dailyForecastProc.command = ["curl", "-fsS", "--max-time", "5", url]
     dailyForecastProc.running = true
@@ -329,9 +331,19 @@ Panel {
     return Model.iconForOpenMeteoCode(day.openMeteoWeatherCode, night)
   }
 
+  function forecastDayLabel(dateString) {
+    var today = Qt.formatDate(new Date(), "yyyy-MM-dd")
+    var date = new Date(today + "T12:00:00")
+    date.setDate(date.getDate() - 1)
+    var yesterday = Qt.formatDate(date, "yyyy-MM-dd")
+    if (String(dateString).slice(0, 10) === yesterday) return "YESTERDAY"
+    if (String(dateString).slice(0, 10) === today) return "TODAY"
+    return root.dayName(dateString).slice(0, 3).toUpperCase()
+  }
+
   function forecastPrecipitation(day) {
     if (!day || day.precipitationProbability === undefined || day.precipitationProbability === null || day.precipitationProbability === "") return ""
-    return Math.round(Number(day.precipitationProbability)) + "% chuva"
+    return Math.round(Number(day.precipitationProbability)) + "% rain"
   }
 
   function hourlyTemperature(hour) {
@@ -813,7 +825,7 @@ Panel {
 
       // ---- Divider between current conditions and forecast.
       Rectangle {
-        visible: root.forecastDays.length > 0
+        visible: root.forecastTimeline.length > 0
         width: parent.width
         height: Style.spacing.hairline
         color: root.bar.foreground
@@ -833,7 +845,7 @@ Panel {
           spacing: Style.space(8)
 
           Repeater {
-            model: root.forecastDays
+            model: root.forecastTimeline
 
             Row {
               required property var modelData
@@ -844,7 +856,7 @@ Panel {
 
               Text {
                 width: Style.space(100)
-                text: root.dayName(modelData.date).slice(0, 3).toUpperCase()
+                text: root.forecastDayLabel(modelData.date)
                 color: root.bar.foreground
                 font.family: root.bar.fontFamily
                 font.pixelSize: Style.font.body
@@ -926,7 +938,7 @@ Panel {
         spacing: Style.space(8)
 
         Text {
-          text: "HOJE"
+          text: "TODAY"
           color: Qt.darker(root.bar.foreground, 1.4)
           font.family: root.bar.fontFamily
           font.pixelSize: Style.font.caption

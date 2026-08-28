@@ -135,7 +135,7 @@ function openMeteoForecastDays(dailyForecastReport, todayString) {
   if (!daily || !daily.time) return []
 
   var result = []
-  for (var i = 0; i < daily.time.length && result.length < 7; ++i) {
+  for (var i = 0; i < daily.time.length && result.length < 5; ++i) {
     var date = daily.time[i]
     if (!isFutureForecastDate(date, todayString)) continue
 
@@ -150,6 +150,50 @@ function openMeteoForecastDays(dailyForecastReport, todayString) {
       openMeteoWeatherCode: daily.weather_code ? daily.weather_code[i] : null,
       precipitationProbability: daily.precipitation_probability_max ? daily.precipitation_probability_max[i] : null
     })
+  }
+  return result
+}
+
+function openMeteoForecastTimeline(dailyForecastReport, todayString) {
+  var daily = dailyForecastReport && dailyForecastReport.daily ? dailyForecastReport.daily : null
+  if (!daily || !daily.time) return []
+
+  var today = new Date(String(todayString || "") + "T12:00:00")
+  if (isNaN(today.getTime())) return []
+  today.setDate(today.getDate() - 1)
+  var yesterday = today.getFullYear() + "-" + String(today.getMonth() + 1).padStart(2, "0") + "-" + String(today.getDate()).padStart(2, "0")
+
+  var result = []
+  for (var i = 0; i < daily.time.length && result.length < 7; ++i) {
+    var date = String(daily.time[i]).slice(0, 10)
+    if (date < yesterday) continue
+    // Keep today plus the following seven days. The upper bound is based on
+    // the API response order and avoids displaying unrelated extra days.
+    if (date === String(todayString || "") || isFutureForecastDate(date, todayString)) {
+      var maxC = daily.temperature_2m_max ? daily.temperature_2m_max[i] : ""
+      var minC = daily.temperature_2m_min ? daily.temperature_2m_min[i] : ""
+      result.push({
+        date: date,
+        maxtempC: roundedTemp(maxC),
+        mintempC: roundedTemp(minC),
+        maxtempF: roundedTemp(celsiusToFahrenheit(maxC)),
+        mintempF: roundedTemp(celsiusToFahrenheit(minC)),
+        openMeteoWeatherCode: daily.weather_code ? daily.weather_code[i] : null,
+        precipitationProbability: daily.precipitation_probability_max ? daily.precipitation_probability_max[i] : null
+      })
+    } else {
+      var pastMaxC = daily.temperature_2m_max ? daily.temperature_2m_max[i] : ""
+      var pastMinC = daily.temperature_2m_min ? daily.temperature_2m_min[i] : ""
+      result.push({
+        date: date,
+        maxtempC: roundedTemp(pastMaxC),
+        mintempC: roundedTemp(pastMinC),
+        maxtempF: roundedTemp(celsiusToFahrenheit(pastMaxC)),
+        mintempF: roundedTemp(celsiusToFahrenheit(pastMinC)),
+        openMeteoWeatherCode: daily.weather_code ? daily.weather_code[i] : null,
+        precipitationProbability: daily.precipitation_probability_max ? daily.precipitation_probability_max[i] : null
+      })
+    }
   }
   return result
 }
@@ -196,7 +240,7 @@ function weatherResponseCompletesSave(hasConfiguredCoordinates, source) {
 function wttrNextForecastDays(report, todayString) {
   var days = report && report.weather ? report.weather : []
   var result = []
-  for (var i = 0; i < days.length && result.length < 7; ++i) {
+  for (var i = 0; i < days.length && result.length < 5; ++i) {
     if (isFutureForecastDate(days[i].date, todayString)) result.push(days[i])
   }
   return result
@@ -233,6 +277,13 @@ function wttrTodayForecast(report, todayString) {
 
 function todayForecast(report, dailyForecastReport, todayString) {
   return openMeteoTodayForecast(dailyForecastReport, todayString) || wttrTodayForecast(report, todayString)
+}
+
+function buildForecastTimeline(report, dailyForecastReport, todayString) {
+  var days = openMeteoForecastTimeline(dailyForecastReport, todayString)
+  if (days.length > 0) return days
+  var wttrDays = report && report.weather ? report.weather : []
+  return wttrDays.filter(function(day) { return String(day.date).slice(0, 10) >= String(todayString || "") }).slice(0, 6)
 }
 
 function openMeteoTodayHourlyForecast(dailyForecastReport, todayString) {
@@ -360,6 +411,7 @@ if (typeof module !== "undefined") {
     shouldUseImperial: shouldUseImperial,
     dayName: dayName,
     openMeteoForecastDays: openMeteoForecastDays,
+    openMeteoForecastTimeline: openMeteoForecastTimeline,
     openMeteoCurrentCondition: openMeteoCurrentCondition,
     currentIcon: currentIcon,
     provisionalCurrentIcon: provisionalCurrentIcon,
@@ -368,6 +420,7 @@ if (typeof module !== "undefined") {
     openMeteoTodayForecast: openMeteoTodayForecast,
     wttrTodayForecast: wttrTodayForecast,
     todayForecast: todayForecast,
+    buildForecastTimeline: buildForecastTimeline,
     openMeteoTodayHourlyForecast: openMeteoTodayHourlyForecast,
     activityForecast: activityForecast,
     buildForecastDays: buildForecastDays,
