@@ -15,10 +15,10 @@ Weather plugin for Omarchy, displayed as a widget in the top bar.
 
 ## Installation
 
-The standard Omarchy plugin manager can install this plugin directly from the `guiestrela/omarchy-weather` GitHub repository:
+Install this plugin from the `guiestrela/weather` GitHub repository with the standard Omarchy plugin manager:
 
 ```bash
-omarchy plugin add https://github.com/guiestrela/omarchy-weather.git --enable
+omarchy plugin add https://github.com/guiestrela/weather.git --enable
 ```
 
 The `--enable` option enables the plugin and adds its bar widget automatically. To install it without enabling it immediately, omit `--enable`, then run:
