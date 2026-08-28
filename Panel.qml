@@ -983,13 +983,13 @@ Panel {
             spacing: Style.space(2)
 
             Text {
-              text: root.dayName(root.todayForecast.date)
+              text: root.todayForecast ? root.dayName(root.todayForecast.date) : ""
               color: root.bar.foreground
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.body
             }
             Text {
-              text: root.bareTempForDay(root.todayForecast, "max") + " / " + root.bareTempForDay(root.todayForecast, "min")
+              text: root.todayForecast ? root.bareTempForDay(root.todayForecast, "max") + " / " + root.bareTempForDay(root.todayForecast, "min") : ""
               color: Qt.darker(root.bar.foreground, 1.3)
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.body
@@ -1099,6 +1099,7 @@ Panel {
         }
 
         }
+      }
 
         Rectangle {
           visible: root.activities.length > 0
@@ -1171,8 +1172,8 @@ Panel {
                         color: root.bar.foreground
                         font.family: root.bar.fontFamily
                         font.pixelSize: Style.font.bodySmall
-                      }
-                    }
+  }
+}
                   }
                 }
               }
@@ -1217,5 +1218,4 @@ Panel {
   }
   }
 
-}
 }
