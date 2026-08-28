@@ -105,9 +105,12 @@ Panel {
           if (frames.length > 0) {
             root.radarHost = parsed.host || "https://tilecache.rainviewer.com"
             root.radarPath = frames[frames.length - 1].path || ""
+          } else {
+            Qt.callLater(root.refreshRadar)
           }
         } catch (e) {
           // Keep the last valid radar frame when the service is unavailable.
+          Qt.callLater(root.refreshRadar)
         }
       }
     }
@@ -130,6 +133,7 @@ Panel {
     dailyForecastRetries = 0
     forecastProc.running = false
     dailyForecastProc.running = false
+    Qt.callLater(root.refreshRadar)
     Qt.callLater(refresh)
   }
 
