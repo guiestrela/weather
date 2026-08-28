@@ -77,7 +77,9 @@ Panel {
   property string radarPath: "/v2/radar/5064c151ce47"
   property string radarLatitude: ""
   property string radarLongitude: ""
-  property string selectedMapLayer: "satellite"
+  // Rain radar is always enabled; the base satellite imagery remains visible
+  // underneath it without exposing layer-switching controls.
+  property string selectedMapLayer: "rain"
   property int mapZoom: 10
 
   function radarCoordinate(value) {
@@ -1339,37 +1341,6 @@ Panel {
           font.pixelSize: Style.font.body
           font.bold: true
           font.letterSpacing: 1
-        }
-
-        Row {
-          spacing: Style.space(6)
-
-          Repeater {
-            model: ["Satellite", "Rain"]
-
-            Rectangle {
-              required property string modelData
-              width: Style.space(82)
-              height: Style.space(28)
-              radius: height / 2
-              color: root.selectedMapLayer === modelData.toLowerCase() ? Color.accent : Qt.darker(root.bar.foreground, 2.2)
-              opacity: root.selectedMapLayer === modelData.toLowerCase() ? 1 : 0.65
-
-              Text {
-                anchors.centerIn: parent
-                text: modelData
-                color: root.bar.foreground
-                font.family: root.bar.fontFamily
-                font.pixelSize: Style.font.caption
-              }
-
-              MouseArea {
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                onClicked: root.selectedMapLayer = modelData.toLowerCase()
-              }
-            }
-          }
         }
 
         Rectangle {

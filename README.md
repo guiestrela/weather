@@ -10,7 +10,8 @@ Weather plugin for Omarchy, displayed as a widget in the top bar.
 - Detailed forecast for the current day, including high, low, and rain probability.
 - Hourly forecast for the current day with a draggable horizontal scrollbar.
 - Activity forecasts for hiking, cycling, running, and camping.
-- Live weather radar centered on the configured location.
+- Live weather radar always enabled and centered on the configured location.
+- Satellite imagery with CARTO city labels, roads, and map outlines underneath the radar.
 - Search for and change the location directly from the panel.
 - Automatic location detection when no city is configured.
 - Metric and imperial unit support.
@@ -99,6 +100,7 @@ This file is managed by the `omarchy-weather-location` command.
 - Added an hourly forecast strip with a draggable horizontal scrollbar.
 - Added hiking, cycling, running, and camping recommendations based on rain, wind, temperature, and storm conditions.
 - Added a live RainViewer radar section below the activity forecasts.
+- Kept the radar layer permanently enabled without layer-switching buttons.
 - Added separate data normalization for today and future forecast days.
 - Reorganized the forecast into an aligned daily list with day/night symbols.
 
