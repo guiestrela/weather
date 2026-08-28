@@ -135,6 +135,7 @@ Panel {
   readonly property var forecastDays: buildForecastDays()
   readonly property var forecastTimeline: Model.buildForecastTimeline(report, dailyForecastReport, Qt.formatDate(new Date(), "yyyy-MM-dd"))
   readonly property var todayForecast: Model.todayForecast(report, dailyForecastReport, Qt.formatDate(new Date(), "yyyy-MM-dd"))
+  readonly property var todayHourlyForecast: Model.openMeteoTodayHourlyForecast(dailyForecastReport, Qt.formatDate(new Date(), "yyyy-MM-dd"))
   readonly property var activities: Model.activityForecast(openMeteoCurrent, todayForecast)
   readonly property string reportCountry: areaInfo && areaInfo.country && areaInfo.country[0] ? areaInfo.country[0].value : ""
 
@@ -181,6 +182,7 @@ Panel {
       + "?latitude=" + encodeURIComponent(String(lat))
       + "&longitude=" + encodeURIComponent(String(lon))
       + "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max"
+      + "&hourly=temperature_2m,weather_code,is_day"
       + "&past_days=1"
       + "&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code,is_day"
       + "&forecast_days=6"
@@ -342,6 +344,15 @@ Panel {
   function forecastPrecipitation(day) {
     if (!day || day.precipitationProbability === undefined || day.precipitationProbability === null || day.precipitationProbability === "") return ""
     return Math.round(Number(day.precipitationProbability)) + "% rain"
+  }
+
+  function hourlyTemperature(hour) {
+    if (!hour) return ""
+    return root.useImperial ? hour.tempF + "°" : hour.tempC + "°"
+  }
+
+  function hourlyTime(hour) {
+    return hour && hour.time ? String(hour.time).slice(11, 16) : ""
   }
 
   function iconForOpenMeteoCode(code) {
@@ -973,6 +984,96 @@ Panel {
             font.family: root.bar.fontFamily
             font.pixelSize: Style.font.bodySmall
             anchors.verticalCenter: parent.verticalCenter
+          }
+        }
+
+        Item {
+          visible: root.todayHourlyForecast.length > 0
+          width: parent.width
+          height: hourlyFlickable.height + Style.space(8)
+
+          Flickable {
+            id: hourlyFlickable
+            width: parent.width
+            height: hourlyRow.height
+            contentWidth: hourlyRow.width
+            contentHeight: height
+            clip: true
+            boundsBehavior: Flickable.StopAtBounds
+            interactive: contentWidth > width
+
+            Row {
+              id: hourlyRow
+              spacing: Style.space(16)
+
+              Repeater {
+                model: root.todayHourlyForecast
+
+                Column {
+                  required property var modelData
+                  width: Style.space(42)
+                  spacing: Style.space(3)
+
+                  Text {
+                    width: parent.width
+                    text: root.hourlyTime(modelData)
+                    color: Qt.darker(root.bar.foreground, 1.4)
+                    font.family: root.bar.fontFamily
+                    font.pixelSize: Style.font.caption
+                    horizontalAlignment: Text.AlignHCenter
+                  }
+                  Text {
+                    width: parent.width
+                    text: root.dayIcon(modelData)
+                    color: root.bar.foreground
+                    font.family: root.bar.fontFamily
+                    font.pixelSize: Style.font.body
+                    horizontalAlignment: Text.AlignHCenter
+                  }
+                  Text {
+                    width: parent.width
+                    text: root.hourlyTemperature(modelData)
+                    color: root.bar.foreground
+                    font.family: root.bar.fontFamily
+                    font.pixelSize: Style.font.bodySmall
+                    horizontalAlignment: Text.AlignHCenter
+                  }
+                }
+              }
+            }
+          }
+
+          Rectangle {
+            visible: hourlyFlickable.contentWidth > hourlyFlickable.width
+            y: hourlyFlickable.height + Style.space(4)
+            width: parent.width
+            height: Style.space(3)
+            radius: height / 2
+            color: Qt.darker(root.bar.foreground, 2.2)
+            opacity: 0.25
+
+            Rectangle {
+              width: Math.max(Style.space(24), parent.width * hourlyFlickable.width / hourlyFlickable.contentWidth)
+              height: parent.height
+              radius: height / 2
+              x: (parent.width - width) * (hourlyFlickable.contentX / Math.max(1, hourlyFlickable.contentWidth - hourlyFlickable.width))
+              color: root.bar.foreground
+              opacity: 0.75
+            }
+
+            MouseArea {
+              anchors.fill: parent
+              preventStealing: true
+              onPressed: function(mouse) {
+                var ratio = Math.max(0, Math.min(1, mouse.x / width))
+                hourlyFlickable.contentX = ratio * Math.max(0, hourlyFlickable.contentWidth - hourlyFlickable.width)
+              }
+              onPositionChanged: function(mouse) {
+                if (!pressed) return
+                var ratio = Math.max(0, Math.min(1, mouse.x / width))
+                hourlyFlickable.contentX = ratio * Math.max(0, hourlyFlickable.contentWidth - hourlyFlickable.width)
+              }
+            }
           }
         }
 

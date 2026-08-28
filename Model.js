@@ -279,6 +279,26 @@ function todayForecast(report, dailyForecastReport, todayString) {
   return openMeteoTodayForecast(dailyForecastReport, todayString) || wttrTodayForecast(report, todayString)
 }
 
+function openMeteoTodayHourlyForecast(dailyForecastReport, todayString) {
+  var hourly = dailyForecastReport && dailyForecastReport.hourly ? dailyForecastReport.hourly : null
+  if (!hourly || !hourly.time) return []
+
+  var result = []
+  for (var i = 0; i < hourly.time.length; ++i) {
+    var timestamp = String(hourly.time[i])
+    if (timestamp.slice(0, 10) !== String(todayString || "")) continue
+    var tempC = hourly.temperature_2m ? hourly.temperature_2m[i] : ""
+    result.push({
+      time: timestamp,
+      tempC: roundedTemp(tempC),
+      tempF: roundedTemp(celsiusToFahrenheit(tempC)),
+      openMeteoWeatherCode: hourly.weather_code ? hourly.weather_code[i] : null,
+      isDay: hourly.is_day ? hourly.is_day[i] : 1
+    })
+  }
+  return result
+}
+
 function buildForecastTimeline(report, dailyForecastReport, todayString) {
   var days = openMeteoForecastTimeline(dailyForecastReport, todayString)
   if (days.length > 0) return days
@@ -394,6 +414,7 @@ if (typeof module !== "undefined") {
     openMeteoTodayForecast: openMeteoTodayForecast,
     wttrTodayForecast: wttrTodayForecast,
     todayForecast: todayForecast,
+    openMeteoTodayHourlyForecast: openMeteoTodayHourlyForecast,
     buildForecastTimeline: buildForecastTimeline,
     activityForecast: activityForecast,
     buildForecastDays: buildForecastDays,
