@@ -1085,6 +1085,9 @@ Panel {
           }
         }
 
+        }
+      }
+
         Rectangle {
           visible: root.activities.length > 0
           width: parent.width
