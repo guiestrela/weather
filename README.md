@@ -21,12 +21,20 @@ Install this plugin from the `guiestrela/weather` GitHub repository with the sta
 
 ```bash
 omarchy plugin add https://github.com/guiestrela/weather.git --enable
+omarchy plugin disable omarchy.weather
+omarchy bar move io.github.guiestrela.weather --section center --index 4
+omarchy restart shell
 ```
 
-The `--enable` option enables the plugin and adds its bar widget automatically. To install it without enabling it immediately, omit `--enable`, then run:
+The additional commands replace the built-in `omarchy.weather` widget in the
+bar with this plugin. To install it without enabling it immediately, omit
+`--enable`, then run:
 
 ```bash
 omarchy plugin enable io.github.guiestrela.weather --section right
+omarchy plugin disable omarchy.weather
+omarchy bar move io.github.guiestrela.weather --section center --index 4
+omarchy restart shell
 ```
 
 Verify the installation with:
@@ -85,7 +93,7 @@ This file is managed by the `omarchy-weather-location` command.
 
 - Updated the daily view to show yesterday, today, and the following 5 days.
 - Reduced the daily query to fetch only the displayed forecast range.
-- Added a dedicated current-day forecast section below the future forecast.
+- Added a dedicated current-day forecast section above the daily forecast.
 - The current-day forecast displays the icon, high, low, and rain probability when provided by the API.
 - Added an hourly forecast strip with a draggable horizontal scrollbar.
 - Added hiking, cycling, running, and camping recommendations based on rain, wind, temperature, and storm conditions.
