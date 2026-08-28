@@ -13,6 +13,35 @@ Weather plugin for Omarchy, displayed as a widget in the top bar.
 - Metric and imperial unit support.
 - Configurable automatic refresh interval.
 
+## Installation
+
+The standard Omarchy plugin manager can install this plugin directly from its Git repository:
+
+```bash
+omarchy plugin add https://github.com/<OWNER>/<REPOSITORY>.git --enable
+```
+
+The `--enable` option enables the plugin and adds its bar widget automatically. To install it without enabling it immediately, omit `--enable`, then run:
+
+```bash
+omarchy plugin enable omarchy.weather --section right
+```
+
+For a local checkout during development, copy the plugin into Omarchy's user plugin directory:
+
+```bash
+mkdir -p ~/.config/omarchy/plugins/omarchy.weather
+cp manifest.json BarWidget.qml Panel.qml Model.js ~/.config/omarchy/plugins/omarchy.weather/
+omarchy-shell shell rescanPlugins
+```
+
+Verify the installation with:
+
+```bash
+omarchy plugin list
+omarchy plugin validate ~/.config/omarchy/plugins/omarchy.weather
+```
+
 ## Usage
 
 Click the weather widget to open the panel.
