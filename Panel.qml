@@ -838,19 +838,6 @@ Panel {
         opacity: 0.12
       }
 
-      Loader {
-        width: parent.width
-        sourceComponent: todaySectionComponent
-      }
-
-      Rectangle {
-        visible: !!root.todayForecast
-        width: parent.width
-        height: Style.spacing.hairline
-        color: root.bar.foreground
-        opacity: 0.12
-      }
-
       // ---- Seven-day forecast list with precipitation, day/night symbols,
       //      and high/low temperatures aligned like a weather app forecast.
       Item {
@@ -946,13 +933,18 @@ Panel {
       }
 
       // ---- Detailed forecast for today.
-      Component {
-        id: todaySectionComponent
+      Rectangle {
+        visible: !!root.todayForecast
+        width: parent.width
+        height: Style.spacing.hairline
+        color: root.bar.foreground
+        opacity: 0.12
+      }
 
-        Column {
-          visible: !!root.todayForecast
-          width: parent.width
-          spacing: Style.space(8)
+      Column {
+        visible: !!root.todayForecast
+        width: parent.width
+        spacing: Style.space(8)
 
         Text {
           text: "TODAY"
@@ -1095,8 +1087,6 @@ Panel {
         }
 
         }
-
-      }
 
         Rectangle {
           visible: root.activities.length > 0
