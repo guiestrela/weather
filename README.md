@@ -8,6 +8,7 @@ Weather plugin for Omarchy, displayed as a widget in the top bar.
 - Feels-like temperature, wind speed, and humidity.
 - Forecast for the next 5 days, including yesterday and today.
 - Detailed forecast for the current day, including hourly temperatures, high, low, and rain probability.
+- Horizontally scrollable hourly forecast with a position indicator.
 - Activity forecasts for hiking, cycling, and running.
 - Search for and change the location directly from the panel.
 - Automatic location detection when no city is configured.

@@ -987,52 +987,85 @@ Panel {
           }
         }
 
-        Flickable {
+        Item {
           visible: root.todayHourlyForecast.length > 0
           width: parent.width
-          height: hourlyRow.height
-          contentWidth: hourlyRow.width
-          contentHeight: height
-          clip: true
-          boundsBehavior: Flickable.StopAtBounds
-          interactive: contentWidth > width
+          height: hourlyFlickable.height + Style.space(8)
 
-          Row {
-            id: hourlyRow
-            spacing: Style.space(16)
+          Flickable {
+            id: hourlyFlickable
+            width: parent.width
+            height: hourlyRow.height
+            contentWidth: hourlyRow.width
+            contentHeight: height
+            clip: true
+            boundsBehavior: Flickable.StopAtBounds
+            interactive: contentWidth > width
 
-            Repeater {
-              model: root.todayHourlyForecast
+            Row {
+              id: hourlyRow
+              spacing: Style.space(16)
 
-              Column {
-                required property var modelData
-                width: Style.space(42)
-                spacing: Style.space(3)
+              Repeater {
+                model: root.todayHourlyForecast
 
-                Text {
-                  width: parent.width
-                  text: root.hourlyTime(modelData)
-                  color: Qt.darker(root.bar.foreground, 1.4)
-                  font.family: root.bar.fontFamily
-                  font.pixelSize: Style.font.caption
-                  horizontalAlignment: Text.AlignHCenter
+                Column {
+                  required property var modelData
+                  width: Style.space(42)
+                  spacing: Style.space(3)
+
+                  Text {
+                    width: parent.width
+                    text: root.hourlyTime(modelData)
+                    color: Qt.darker(root.bar.foreground, 1.4)
+                    font.family: root.bar.fontFamily
+                    font.pixelSize: Style.font.caption
+                    horizontalAlignment: Text.AlignHCenter
+                  }
+                  Text {
+                    width: parent.width
+                    text: root.dayIcon(modelData)
+                    color: root.bar.foreground
+                    font.family: root.bar.fontFamily
+                    font.pixelSize: Style.font.body
+                    horizontalAlignment: Text.AlignHCenter
+                  }
+                  Text {
+                    width: parent.width
+                    text: root.hourlyTemperature(modelData)
+                    color: root.bar.foreground
+                    font.family: root.bar.fontFamily
+                    font.pixelSize: Style.font.bodySmall
+                    horizontalAlignment: Text.AlignHCenter
+                  }
                 }
-                Text {
-                  width: parent.width
-                  text: root.dayIcon(modelData)
-                  color: root.bar.foreground
-                  font.family: root.bar.fontFamily
-                  font.pixelSize: Style.font.body
-                  horizontalAlignment: Text.AlignHCenter
-                }
-                Text {
-                  width: parent.width
-                  text: root.hourlyTemperature(modelData)
-                  color: root.bar.foreground
-                  font.family: root.bar.fontFamily
-                  font.pixelSize: Style.font.bodySmall
-                  horizontalAlignment: Text.AlignHCenter
-                }
+              }
+            }
+          }
+
+          Rectangle {
+            visible: hourlyFlickable.contentWidth > hourlyFlickable.width
+            y: hourlyFlickable.height + Style.space(4)
+            width: parent.width
+            height: Style.space(3)
+            radius: height / 2
+            color: Qt.darker(root.bar.foreground, 2.2)
+            opacity: 0.25
+
+            Rectangle {
+              width: Math.max(Style.space(24), parent.width * hourlyFlickable.width / hourlyFlickable.contentWidth)
+              height: parent.height
+              radius: height / 2
+              x: (parent.width - width) * (hourlyFlickable.contentX / Math.max(1, hourlyFlickable.contentWidth - hourlyFlickable.width))
+              color: root.bar.foreground
+              opacity: 0.75
+            }
+
+            MouseArea {
+              anchors.fill: parent
+              onClicked: function(mouse) {
+                var ratio = Math.max(0, Math.min(1, mouse.x / width))
+                hourlyFlickable.contentX = ratio * Math.max(0, hourlyFlickable.contentWidth - hourlyFlickable.width)
               }
             }
           }
