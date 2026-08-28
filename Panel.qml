@@ -1063,7 +1063,13 @@ Panel {
 
             MouseArea {
               anchors.fill: parent
-              onClicked: function(mouse) {
+              preventStealing: true
+              onPressed: function(mouse) {
+                var ratio = Math.max(0, Math.min(1, mouse.x / width))
+                hourlyFlickable.contentX = ratio * Math.max(0, hourlyFlickable.contentWidth - hourlyFlickable.width)
+              }
+              onPositionChanged: function(mouse) {
+                if (!pressed) return
                 var ratio = Math.max(0, Math.min(1, mouse.x / width))
                 hourlyFlickable.contentX = ratio * Math.max(0, hourlyFlickable.contentWidth - hourlyFlickable.width)
               }
