@@ -235,6 +235,32 @@ function todayForecast(report, dailyForecastReport, todayString) {
   return openMeteoTodayForecast(dailyForecastReport, todayString) || wttrTodayForecast(report, todayString)
 }
 
+function openMeteoTodayHourlyForecast(dailyForecastReport, todayString) {
+  var hourly = dailyForecastReport && dailyForecastReport.hourly ? dailyForecastReport.hourly : null
+  if (!hourly || !hourly.time) return []
+
+  var result = []
+  var firstHourIndex = -1
+  for (var i = 0; i < hourly.time.length; ++i) {
+    var timestamp = String(hourly.time[i])
+    if (timestamp.slice(0, 10) !== String(todayString || "")) continue
+    if (firstHourIndex < 0) firstHourIndex = i
+    // Display every three hours to keep the strip compact while still
+    // covering the complete current day.
+    if ((i - firstHourIndex) % 3 !== 0) continue
+    var tempC = hourly.temperature_2m ? hourly.temperature_2m[i] : ""
+    result.push({
+      time: timestamp,
+      tempC: roundedTemp(tempC),
+      tempF: roundedTemp(celsiusToFahrenheit(tempC)),
+      weatherCode: hourly.weather_code ? hourly.weather_code[i] : null,
+      isDay: hourly.is_day ? hourly.is_day[i] : 1,
+      precipitationProbability: hourly.precipitation_probability ? hourly.precipitation_probability[i] : null
+    })
+  }
+  return result
+}
+
 function buildForecastDays(report, dailyForecastReport, todayString) {
   var days = openMeteoForecastDays(dailyForecastReport, todayString)
   return days.length > 0 ? days : wttrNextForecastDays(report, todayString)
@@ -252,7 +278,7 @@ function bareTempForDay(day, kind, useImperial) {
 function dayIcon(day) {
   if (!day) return ""
   if (day.openMeteoWeatherCode !== undefined && day.openMeteoWeatherCode !== null)
-    return iconForOpenMeteoCode(day.openMeteoWeatherCode)
+    return iconForOpenMeteoCode(day.openMeteoWeatherCode, Number(day.isDay) === 0)
   if (!day.hourly || day.hourly.length === 0) return ""
 
   var best = day.hourly[0]
@@ -323,6 +349,7 @@ if (typeof module !== "undefined") {
     openMeteoTodayForecast: openMeteoTodayForecast,
     wttrTodayForecast: wttrTodayForecast,
     todayForecast: todayForecast,
+    openMeteoTodayHourlyForecast: openMeteoTodayHourlyForecast,
     buildForecastDays: buildForecastDays,
     bareTempForDay: bareTempForDay,
     dayIcon: dayIcon,

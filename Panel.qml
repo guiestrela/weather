@@ -134,6 +134,7 @@ Panel {
   readonly property var areaInfo: report && report.nearest_area && report.nearest_area[0] ? report.nearest_area[0] : null
   readonly property var forecastDays: buildForecastDays()
   readonly property var todayForecast: Model.todayForecast(report, dailyForecastReport, Qt.formatDate(new Date(), "yyyy-MM-dd"))
+  readonly property var todayHourlyForecast: Model.openMeteoTodayHourlyForecast(dailyForecastReport, Qt.formatDate(new Date(), "yyyy-MM-dd"))
   readonly property string reportCountry: areaInfo && areaInfo.country && areaInfo.country[0] ? areaInfo.country[0].value : ""
 
   readonly property bool useImperial: Model.shouldUseImperial(setting("unit", ""), Qt.locale().name, reportCountry)
@@ -179,6 +180,7 @@ Panel {
       + "?latitude=" + encodeURIComponent(String(lat))
       + "&longitude=" + encodeURIComponent(String(lon))
       + "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max"
+      + "&hourly=temperature_2m,weather_code,is_day,precipitation_probability"
       + "&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code,is_day"
       + "&forecast_days=8"
       + "&timezone=auto"
@@ -323,6 +325,15 @@ Panel {
   function forecastPrecipitation(day) {
     if (!day || day.precipitationProbability === undefined || day.precipitationProbability === null || day.precipitationProbability === "") return ""
     return Math.round(Number(day.precipitationProbability)) + "% chuva"
+  }
+
+  function hourlyTemperature(hour) {
+    if (!hour) return ""
+    return root.useImperial ? hour.tempF + "°" : hour.tempC + "°"
+  }
+
+  function hourlyTime(hour) {
+    return hour && hour.time ? String(hour.time).slice(11, 16) : ""
   }
 
   function iconForOpenMeteoCode(code) {
@@ -929,6 +940,57 @@ Panel {
             font.family: root.bar.fontFamily
             font.pixelSize: Style.font.bodySmall
             anchors.verticalCenter: parent.verticalCenter
+          }
+        }
+
+        Flickable {
+          visible: root.todayHourlyForecast.length > 0
+          width: parent.width
+          height: hourlyRow.height
+          contentWidth: hourlyRow.width
+          contentHeight: height
+          clip: true
+          boundsBehavior: Flickable.StopAtBounds
+          interactive: contentWidth > width
+
+          Row {
+            id: hourlyRow
+            spacing: Style.space(16)
+
+            Repeater {
+              model: root.todayHourlyForecast
+
+              Column {
+                required property var modelData
+                width: Style.space(42)
+                spacing: Style.space(3)
+
+                Text {
+                  width: parent.width
+                  text: root.hourlyTime(modelData)
+                  color: Qt.darker(root.bar.foreground, 1.4)
+                  font.family: root.bar.fontFamily
+                  font.pixelSize: Style.font.caption
+                  horizontalAlignment: Text.AlignHCenter
+                }
+                Text {
+                  width: parent.width
+                  text: root.dayIcon(modelData)
+                  color: root.bar.foreground
+                  font.family: root.bar.fontFamily
+                  font.pixelSize: Style.font.body
+                  horizontalAlignment: Text.AlignHCenter
+                }
+                Text {
+                  width: parent.width
+                  text: root.hourlyTemperature(modelData)
+                  color: root.bar.foreground
+                  font.family: root.bar.fontFamily
+                  font.pixelSize: Style.font.bodySmall
+                  horizontalAlignment: Text.AlignHCenter
+                }
+              }
+            }
           }
         }
       }
