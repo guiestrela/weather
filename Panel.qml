@@ -182,7 +182,7 @@ Panel {
       + "?latitude=" + encodeURIComponent(String(lat))
       + "&longitude=" + encodeURIComponent(String(lon))
       + "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max"
-      + "&hourly=temperature_2m,weather_code,is_day,precipitation_probability"
+      + "&hourly=temperature_2m,apparent_temperature,weather_code,is_day,precipitation_probability"
       + "&past_days=1"
       + "&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code,is_day"
       + "&forecast_days=6"
@@ -349,6 +349,12 @@ Panel {
   function hourlyTemperature(hour) {
     if (!hour) return ""
     return root.useImperial ? hour.tempF + "°" : hour.tempC + "°"
+  }
+
+  function hourlyFeelsLike(hour) {
+    if (!hour || (hour.feelsLikeC === undefined && hour.feelsLikeF === undefined)) return ""
+    var value = root.useImperial ? hour.feelsLikeF : hour.feelsLikeC
+    return value === undefined || value === null || value === "" ? "" : "Feels " + value + "°"
   }
 
   function hourlyTime(hour) {
@@ -1036,6 +1042,15 @@ Panel {
                     color: root.bar.foreground
                     font.family: root.bar.fontFamily
                     font.pixelSize: Style.font.bodySmall
+                    horizontalAlignment: Text.AlignHCenter
+                  }
+                  Text {
+                    visible: root.hourlyFeelsLike(modelData) !== ""
+                    width: parent.width
+                    text: root.hourlyFeelsLike(modelData)
+                    color: Qt.darker(root.bar.foreground, 1.5)
+                    font.family: root.bar.fontFamily
+                    font.pixelSize: Style.font.caption
                     horizontalAlignment: Text.AlignHCenter
                   }
                 }
