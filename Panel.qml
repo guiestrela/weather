@@ -323,6 +323,12 @@ Panel {
     return Model.dayIcon(day)
   }
 
+  function forecastIcon(day, night) {
+    if (!day || day.openMeteoWeatherCode === undefined || day.openMeteoWeatherCode === null)
+      return root.dayIcon(day)
+    return Model.iconForOpenMeteoCode(day.openMeteoWeatherCode, night)
+  }
+
   function forecastPrecipitation(day) {
     if (!day || day.precipitationProbability === undefined || day.precipitationProbability === null || day.precipitationProbability === "") return ""
     return Math.round(Number(day.precipitationProbability)) + "% chuva"
@@ -814,18 +820,17 @@ Panel {
         opacity: 0.12
       }
 
-      // ---- Seven-day forecast, arranged in two columns of compact cards.
+      // ---- Seven-day forecast list with precipitation, day/night symbols,
+      //      and high/low temperatures aligned like a weather app forecast.
       Item {
         visible: root.forecastDays.length > 0
         width: parent.width
-        height: forecastGrid.implicitHeight
+        height: forecastList.implicitHeight
 
-        Grid {
-          id: forecastGrid
+        Column {
+          id: forecastList
           width: parent.width
-          columns: 2
-          rowSpacing: Style.space(12)
-          columnSpacing: Style.space(4)
+          spacing: Style.space(8)
 
           Repeater {
             model: root.forecastDays
@@ -833,47 +838,73 @@ Panel {
             Row {
               required property var modelData
               required property int index
-              width: (forecastGrid.width - Style.space(4)) / 2
-              height: forecastCard.implicitHeight
-              spacing: Style.space(10)
+              width: forecastList.width
+              height: Style.space(38)
+              spacing: Style.space(6)
 
               Text {
+                width: Style.space(100)
+                text: root.dayName(modelData.date).slice(0, 3).toUpperCase()
+                color: root.bar.foreground
+                font.family: root.bar.fontFamily
+                font.pixelSize: Style.font.body
+                font.bold: true
                 anchors.verticalCenter: parent.verticalCenter
-                text: root.dayIcon(modelData)
+              }
+
+              Text {
+                width: Style.space(64)
+                text: root.forecastPrecipitation(modelData) || "—"
+                color: Qt.darker(root.bar.foreground, 1.3)
+                font.family: root.bar.fontFamily
+                font.pixelSize: Style.font.bodySmall
+                horizontalAlignment: Text.AlignHCenter
+                anchors.verticalCenter: parent.verticalCenter
+              }
+
+              Text {
+                width: Style.space(42)
+                text: root.forecastIcon(modelData, false)
                 color: root.bar.foreground
                 font.family: root.bar.fontFamily
                 font.pixelSize: Style.font.display
+                horizontalAlignment: Text.AlignHCenter
+                anchors.verticalCenter: parent.verticalCenter
               }
 
-              Column {
-                id: forecastCard
+              Text {
+                width: Style.space(42)
+                text: root.forecastIcon(modelData, true)
+                color: Qt.darker(root.bar.foreground, 1.15)
+                font.family: root.bar.fontFamily
+                font.pixelSize: Style.font.display
+                horizontalAlignment: Text.AlignHCenter
                 anchors.verticalCenter: parent.verticalCenter
-                spacing: Style.space(2)
+              }
 
-                Text {
-                  text: root.dayName(modelData.date).toUpperCase()
-                  color: Qt.darker(root.bar.foreground, 1.4)
-                  font.family: root.bar.fontFamily
-                  font.pixelSize: Style.font.caption
-                  font.letterSpacing: 1
-                }
+              Item {
+                width: Math.max(0, forecastList.width - Style.space(380))
+                height: 1
+              }
 
-                Row {
-                  spacing: Style.space(6)
+              Text {
+                width: Style.space(48)
+                text: root.bareTempForDay(modelData, "max")
+                color: root.bar.foreground
+                font.family: root.bar.fontFamily
+                font.pixelSize: Style.font.body
+                horizontalAlignment: Text.AlignRight
+                anchors.verticalCenter: parent.verticalCenter
+              }
 
-                  Text {
-                    text: root.bareTempForDay(modelData, "max")
-                    color: root.bar.foreground
-                    font.family: root.bar.fontFamily
-                    font.pixelSize: Style.font.body
-                  }
-                  Text {
-                    text: root.bareTempForDay(modelData, "min")
-                    color: Qt.darker(root.bar.foreground, 1.5)
-                    font.family: root.bar.fontFamily
-                    font.pixelSize: Style.font.body
-                  }
-                }
+              Text {
+                width: Style.space(48)
+                text: root.bareTempForDay(modelData, "min")
+                color: Qt.darker(root.bar.foreground, 1.4)
+                font.family: root.bar.fontFamily
+                font.pixelSize: Style.font.body
+                horizontalAlignment: Text.AlignRight
+                anchors.verticalCenter: parent.verticalCenter
               }
             }
           }

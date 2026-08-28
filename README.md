@@ -89,7 +89,7 @@ This file is managed by the `omarchy-weather-location` command.
 - Added an hourly forecast strip for the current day with three-hour intervals.
 - Added hiking, cycling, and running recommendations based on rain, wind, temperature, and storm conditions.
 - Added separate data normalization for today and future forecast days.
-- Reorganized the forecast into compact cards displayed in two columns.
+- Reorganized the forecast into an aligned daily list with day/night symbols.
 
 ## Development
 
