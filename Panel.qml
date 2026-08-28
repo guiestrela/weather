@@ -903,7 +903,6 @@ Panel {
         visible: root.forecastDays.length > 0
         width: parent.width
         height: forecastList.implicitHeight
-        transform: Translate { y: todaySection.implicitHeight + Style.space(14) }
 
         Column {
           id: forecastList
@@ -991,21 +990,17 @@ Panel {
 
       // ---- Detailed forecast for today, shown after the future days.
       Rectangle {
-        id: todayDivider
         visible: !!root.todayForecast
         width: parent.width
         height: Style.spacing.hairline
         color: root.bar.foreground
         opacity: 0.12
-        transform: Translate { y: -(forecastList.implicitHeight + Style.space(28)) }
       }
 
       Column {
-        id: todaySection
         visible: !!root.todayForecast
         width: parent.width
         spacing: Style.space(8)
-        transform: Translate { y: -(forecastList.implicitHeight + Style.space(28) + todayDivider.height) }
 
         Text {
           text: "TODAY"
