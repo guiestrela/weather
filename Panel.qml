@@ -7,8 +7,8 @@ import "Model.js" as Model
 
 Panel {
   id: root
-  moduleName: "omarchy.weather"
-  ipcTarget: "omarchy.weather"
+  moduleName: "io.github.guiestrela.weather"
+  ipcTarget: "io.github.guiestrela.weather"
   manageIpc: false
 
   property var anchorItem: null

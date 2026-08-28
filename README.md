@@ -15,31 +15,35 @@ Weather plugin for Omarchy, displayed as a widget in the top bar.
 
 ## Installation
 
-The standard Omarchy plugin manager can install this plugin directly from its Git repository:
+The standard Omarchy plugin manager can install this plugin directly from the `guiestrela/omarchy-weather` GitHub repository:
 
 ```bash
-omarchy plugin add https://github.com/<OWNER>/<REPOSITORY>.git --enable
+omarchy plugin add https://github.com/guiestrela/omarchy-weather.git --enable
 ```
 
 The `--enable` option enables the plugin and adds its bar widget automatically. To install it without enabling it immediately, omit `--enable`, then run:
 
 ```bash
-omarchy plugin enable omarchy.weather --section right
-```
-
-For a local checkout during development, copy the plugin into Omarchy's user plugin directory:
-
-```bash
-mkdir -p ~/.config/omarchy/plugins/omarchy.weather
-cp manifest.json BarWidget.qml Panel.qml Model.js ~/.config/omarchy/plugins/omarchy.weather/
-omarchy-shell shell rescanPlugins
+omarchy plugin enable io.github.guiestrela.weather --section right
 ```
 
 Verify the installation with:
 
 ```bash
 omarchy plugin list
-omarchy plugin validate ~/.config/omarchy/plugins/omarchy.weather
+omarchy plugin validate ~/.config/omarchy/plugins/io.github.guiestrela.weather
+```
+
+To update the installed plugin:
+
+```bash
+omarchy plugin update io.github.guiestrela.weather
+```
+
+To remove the plugin:
+
+```bash
+omarchy plugin remove io.github.guiestrela.weather
 ```
 
 ## Usage
@@ -57,8 +61,8 @@ The plugin uses Open-Meteo for daily forecasts and wttr.in for current condition
 
 Settings are read through the Omarchy module system. Available options include:
 
-- `unit`: `metric` ou `imperial`.
-- `refreshMinutes`: intervalo de atualização em minutos.
+- `unit`: `metric` or `imperial`.
+- `refreshMinutes`: refresh interval in minutes.
 
 The selected location is stored at:
 

@@ -4,7 +4,7 @@ import qs.Ui
 
 BarWidget {
   id: root
-  moduleName: "omarchy.weather"
+  moduleName: "io.github.guiestrela.weather"
 
   function injectPanel() {
     var target = panelLoader.item
