@@ -72,17 +72,77 @@ Panel {
   property var dailyForecastReport: null
   property string wttrLocation: ""
   property string radarHost: "https://tilecache.rainviewer.com"
-  property string radarPath: ""
+  // Latest public RainViewer frame used as a startup fallback; refreshRadar
+  // replaces it with the newest frame when the API response arrives.
+  property string radarPath: "/v2/radar/5064c151ce47"
+  property string radarLatitude: ""
+  property string radarLongitude: ""
+  property string selectedMapLayer: "satellite"
+  property int mapZoom: 10
 
   function radarCoordinate(value) {
     var configured = parseFloat(String(value === "lat" ? configuredLocationState.latitude : configuredLocationState.longitude))
     if (!isNaN(configured)) return String(configured)
+    var cached = value === "lat" ? radarLatitude : radarLongitude
+    if (cached !== "") return cached
     var field = value === "lat" ? "latitude" : "longitude"
     return areaInfo && areaInfo[field] && areaInfo[field][0] ? String(areaInfo[field][0].value) : ""
   }
 
+  function mapTile(value, offset) {
+    var latitude = parseFloat(radarCoordinate("lat"))
+    var longitude = parseFloat(radarCoordinate("lon"))
+    var zoom = root.mapZoom
+    var scale = Math.pow(2, zoom)
+    if (value === "x") return Math.floor((longitude + 180) / 360 * scale) + (offset || 0)
+    var latitudeRadians = latitude * Math.PI / 180
+    return Math.floor((1 - Math.asinh(Math.tan(latitudeRadians)) / Math.PI) / 2 * scale) + (offset || 0)
+  }
+
+  function mapFraction(value) {
+    var latitude = parseFloat(radarCoordinate("lat"))
+    var longitude = parseFloat(radarCoordinate("lon"))
+    var zoom = root.mapZoom
+    var scale = Math.pow(2, zoom)
+    var raw = value === "x"
+      ? (longitude + 180) / 360 * scale
+      : (1 - Math.asinh(Math.tan(latitude * Math.PI / 180)) / Math.PI) / 2 * scale
+    return raw - Math.floor(raw)
+  }
+
   function refreshRadar() {
+    if (radarCoordinate("lat") === "" || radarCoordinate("lon") === "") {
+      if (configuredLocation !== "" && !radarGeocodeProc.running) radarGeocodeProc.running = true
+      return
+    }
     radarProc.running = true
+  }
+
+  Process {
+    id: radarGeocodeProc
+    command: ["curl", "-fsS", "--max-time", "5", "https://geocoding-api.open-meteo.com/v1/search?name=" + encodeURIComponent(root.configuredLocation) + "&count=10&countryCode=BR&language=en&format=json"]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        try {
+          var results = JSON.parse(String(text || "")).results || []
+          var selected = results.length > 0 ? results[0] : null
+          for (var i = 0; i < results.length; i++) {
+            if (String(results[i].country_code || "").toUpperCase() === "BR") {
+              selected = results[i]
+              break
+            }
+          }
+          if (selected) {
+            root.radarLatitude = String(selected.latitude)
+            root.radarLongitude = String(selected.longitude)
+            root.refreshRadar()
+          }
+        } catch (e) {
+          // Radar remains hidden until coordinates are available.
+        }
+      }
+    }
   }
 
   Timer {
@@ -95,25 +155,25 @@ Panel {
 
   Process {
     id: radarProc
-    command: ["curl", "-fsS", "--max-time", "8", "https://api.rainviewer.com/public/weather-maps.json"]
+    command: ["sh", "-c", "curl -fsS --max-time 8 https://api.rainviewer.com/public/weather-maps.json | grep -o '\"path\":\"[^\"]*\"' | tail -1 | sed 's/.*\"path\":\"//;s/\"$//'" ]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
-        try {
-          var parsed = JSON.parse(String(text || ""))
-          var frames = parsed.radar && parsed.radar.past ? parsed.radar.past : []
-          if (frames.length > 0) {
-            root.radarHost = parsed.host || "https://tilecache.rainviewer.com"
-            root.radarPath = frames[frames.length - 1].path || ""
-          } else {
-            Qt.callLater(root.refreshRadar)
-          }
-        } catch (e) {
-          // Keep the last valid radar frame when the service is unavailable.
-          Qt.callLater(root.refreshRadar)
+        var framePath = String(text || "").trim()
+        if (framePath) {
+          root.radarPath = framePath
+        } else {
+          radarRetryTimer.restart()
         }
       }
     }
+  }
+
+  Timer {
+    id: radarRetryTimer
+    interval: 10000
+    repeat: false
+    onTriggered: root.refreshRadar()
   }
 
   // Configured location, read from the weather.json state file (owned by
@@ -577,7 +637,7 @@ Panel {
     open: root.opened
     centerOnBar: true
     focusTarget: keyCatcher
-    contentWidth: panel.fittedContentWidth(Style.space(480))
+    contentWidth: Style.space(480)
     contentHeight: panel.fittedContentHeight(weatherColumn.implicitHeight)
 
     PanelKeyCatcher {
@@ -599,7 +659,7 @@ Panel {
 
         Column {
           id: weatherColumn
-          width: weatherScroll.width
+          width: Style.space(480)
           spacing: Style.space(14)
 
       // ---- Hero row: big icon + temp on the left; location and stats stacked on the right.
@@ -1258,7 +1318,6 @@ Panel {
             }
           }
         }
-      }
 
       Rectangle {
         visible: root.radarPath !== ""
@@ -1277,22 +1336,116 @@ Panel {
           text: "RADAR AND MAPS"
           color: Qt.darker(root.bar.foreground, 1.4)
           font.family: root.bar.fontFamily
-          font.pixelSize: Style.font.caption
+          font.pixelSize: Style.font.body
+          font.bold: true
           font.letterSpacing: 1
         }
 
+        Row {
+          spacing: Style.space(6)
+
+          Repeater {
+            model: ["Satellite", "Rain"]
+
+            Rectangle {
+              required property string modelData
+              width: Style.space(82)
+              height: Style.space(28)
+              radius: height / 2
+              color: root.selectedMapLayer === modelData.toLowerCase() ? Color.accent : Qt.darker(root.bar.foreground, 2.2)
+              opacity: root.selectedMapLayer === modelData.toLowerCase() ? 1 : 0.65
+
+              Text {
+                anchors.centerIn: parent
+                text: modelData
+                color: root.bar.foreground
+                font.family: root.bar.fontFamily
+                font.pixelSize: Style.font.caption
+              }
+
+              MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: root.selectedMapLayer = modelData.toLowerCase()
+              }
+            }
+          }
+        }
+
         Rectangle {
-          width: parent.width
-          height: Style.space(220)
-          radius: Style.cornerRadius
-          color: Qt.darker(root.bar.foreground, 2.5)
+          width: Style.space(480)
+          height: Style.space(260)
+          radius: 0
+          color: "transparent"
+          border.width: 0
           clip: true
+
+          Item {
+            id: mapTiles
+            anchors.centerIn: parent
+            anchors.horizontalCenterOffset: Style.space(128) - Style.space(256) * root.mapFraction("x")
+            anchors.verticalCenterOffset: Style.space(128) - Style.space(256) * root.mapFraction("y")
+            width: Style.space(768)
+            height: Style.space(768)
+
+            Repeater {
+              model: 9
+
+              Image {
+                required property int index
+                x: (index % 3) * Style.space(256)
+                y: Math.floor(index / 3) * Style.space(256)
+                width: Style.space(256)
+                height: Style.space(256)
+                source: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/" + root.mapZoom + "/" + root.mapTile("y", -1 + Math.floor(index / 3)) + "/" + root.mapTile("x", -1 + (index % 3))
+                asynchronous: true
+                smooth: false
+                opacity: 0.78
+              }
+            }
+
+            // Transparent CARTO overlay keeps city names, roads and map
+            // outlines readable on top of the satellite imagery.
+            Repeater {
+              model: 9
+
+              Image {
+                required property int index
+                x: (index % 3) * Style.space(256)
+                y: Math.floor(index / 3) * Style.space(256)
+                width: Style.space(256)
+                height: Style.space(256)
+                source: "https://a.basemaps.cartocdn.com/light_only_labels/" + root.mapZoom + "/" + root.mapTile("x", -1 + (index % 3)) + "/" + root.mapTile("y", -1 + Math.floor(index / 3)) + ".png"
+                asynchronous: true
+                smooth: false
+                opacity: 0.9
+              }
+            }
+          }
 
           Image {
             anchors.fill: parent
             fillMode: Image.PreserveAspectCrop
             source: root.radarHost + root.radarPath + "/512/5/" + root.radarCoordinate("lat") + "/" + root.radarCoordinate("lon") + "/2/1_1.png"
             asynchronous: true
+            smooth: false
+            opacity: 1
+            visible: root.selectedMapLayer === "rain"
+          }
+
+          // The map mosaic is positioned so the configured location is at
+          // the exact center of the viewport. This marker makes that point
+          // visible on both the satellite and rain layers.
+          Rectangle {
+            anchors.centerIn: parent
+            width: Style.space(10)
+            height: width
+            radius: width / 2
+            color: Color.accent
+            border.width: Style.space(2)
+            border.color: root.bar.foreground
+            z: 2
+            visible: root.radarCoordinate("lat") !== "" && root.radarCoordinate("lon") !== ""
           }
 
           Text {
@@ -1300,16 +1453,24 @@ Panel {
             anchors.bottom: parent.bottom
             anchors.leftMargin: Style.space(8)
             anchors.bottomMargin: Style.space(6)
-            text: "Weather radar by RainViewer"
+            text: "Satellite: Esri  •  Labels: CARTO  •  Radar: RainViewer"
             color: root.bar.foreground
             font.family: root.bar.fontFamily
             font.pixelSize: Style.font.caption
             opacity: 0.8
           }
         }
+
+        Text {
+          width: parent.width
+          text: "Current temperature of approximately " + (root.reportTempNum || "—") + root.tempUnit
+          color: root.bar.foreground
+          font.family: root.bar.fontFamily
+          font.pixelSize: Style.font.body
+        }
       }
     }
   }
   }
-
+  }
 }
