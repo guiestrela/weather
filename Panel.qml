@@ -1047,7 +1047,7 @@ Panel {
             visible: hourlyFlickable.contentWidth > hourlyFlickable.width
             y: hourlyFlickable.height + Style.space(4)
             width: parent.width
-            height: Style.space(3)
+            height: Style.space(8)
             radius: height / 2
             color: Qt.darker(root.bar.foreground, 2.2)
             opacity: 0.25
