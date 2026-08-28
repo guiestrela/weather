@@ -135,6 +135,7 @@ Panel {
   readonly property var forecastDays: buildForecastDays()
   readonly property var todayForecast: Model.todayForecast(report, dailyForecastReport, Qt.formatDate(new Date(), "yyyy-MM-dd"))
   readonly property var todayHourlyForecast: Model.openMeteoTodayHourlyForecast(dailyForecastReport, Qt.formatDate(new Date(), "yyyy-MM-dd"))
+  readonly property var activities: Model.activityForecast(openMeteoCurrent, todayForecast)
   readonly property string reportCountry: areaInfo && areaInfo.country && areaInfo.country[0] ? areaInfo.country[0].value : ""
 
   readonly property bool useImperial: Model.shouldUseImperial(setting("unit", ""), Qt.locale().name, reportCountry)
@@ -988,6 +989,62 @@ Panel {
                   font.family: root.bar.fontFamily
                   font.pixelSize: Style.font.bodySmall
                   horizontalAlignment: Text.AlignHCenter
+                }
+              }
+            }
+          }
+        }
+
+        Column {
+          visible: root.activities.length > 0
+          width: parent.width
+          spacing: Style.space(8)
+
+          Text {
+            text: "ACTIVITY FORECASTS"
+            color: Qt.darker(root.bar.foreground, 1.4)
+            font.family: root.bar.fontFamily
+            font.pixelSize: Style.font.caption
+            font.letterSpacing: 1
+          }
+
+          Row {
+            width: parent.width
+            spacing: Style.space(8)
+
+            Repeater {
+              model: root.activities
+
+              Rectangle {
+                required property var modelData
+                width: (parent.width - Style.space(16)) / 3
+                height: activityContent.implicitHeight + Style.space(16)
+                radius: Style.cornerRadius
+                color: Style.hoverFillFor(root.bar.foreground, modelData.status === "Good" ? Color.accent : root.bar.foreground)
+                opacity: 0.85
+
+                Column {
+                  id: activityContent
+                  anchors.left: parent.left
+                  anchors.right: parent.right
+                  anchors.verticalCenter: parent.verticalCenter
+                  anchors.leftMargin: Style.space(8)
+                  anchors.rightMargin: Style.space(8)
+                  spacing: Style.space(3)
+
+                  Text {
+                    text: modelData.symbol + "  " + modelData.name
+                    color: root.bar.foreground
+                    font.family: root.bar.fontFamily
+                    font.pixelSize: Style.font.bodySmall
+                    font.bold: true
+                  }
+                  Text {
+                    text: modelData.status
+                    color: root.bar.foreground
+                    font.family: root.bar.fontFamily
+                    font.pixelSize: Style.font.bodySmall
+                  }
                 }
               }
             }

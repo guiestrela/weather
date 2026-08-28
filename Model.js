@@ -261,6 +261,25 @@ function openMeteoTodayHourlyForecast(dailyForecastReport, todayString) {
   return result
 }
 
+function activityForecast(current, today) {
+  var code = current && current.openMeteoWeatherCode !== undefined ? Number(current.openMeteoWeatherCode) : 0
+  var rain = today && today.precipitationProbability !== undefined && today.precipitationProbability !== null ? Number(today.precipitationProbability) : 0
+  var wind = current && current.wind_speed_10m !== undefined ? Number(current.wind_speed_10m) : Number(current && current.windspeedKmph || 0)
+  var temp = current && current.temperature_2m !== undefined ? Number(current.temperature_2m) : Number(current && current.temp_C || 20)
+  var wet = rain >= 45 || code >= 51
+  var storm = code >= 95
+
+  function result(name, symbol, good, message) {
+    return { name: name, symbol: symbol, status: good ? "Good" : "Poor", message: message }
+  }
+
+  return [
+    result("Hiking", "", !wet && !storm && wind < 35 && temp > 8 && temp < 34, wet || storm ? "Rain is expected today" : "Conditions are challenging today"),
+    result("Cycling", "", !wet && !storm && wind < 28 && temp > 10 && temp < 32, wet || storm ? "Poor weather for cycling" : "Wind or temperature may be uncomfortable"),
+    result("Running", "", !storm && rain < 60 && temp > 5 && temp < 30, storm || rain >= 60 ? "Rain is expected today" : "Warm or windy conditions")
+  ]
+}
+
 function buildForecastDays(report, dailyForecastReport, todayString) {
   var days = openMeteoForecastDays(dailyForecastReport, todayString)
   return days.length > 0 ? days : wttrNextForecastDays(report, todayString)
@@ -350,6 +369,7 @@ if (typeof module !== "undefined") {
     wttrTodayForecast: wttrTodayForecast,
     todayForecast: todayForecast,
     openMeteoTodayHourlyForecast: openMeteoTodayHourlyForecast,
+    activityForecast: activityForecast,
     buildForecastDays: buildForecastDays,
     bareTempForDay: bareTempForDay,
     dayIcon: dayIcon,
