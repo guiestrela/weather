@@ -1005,7 +1005,7 @@ Panel {
         Item {
           visible: root.todayHourlyForecast.length > 0
           width: parent.width
-          height: hourlyFlickable.height + Style.space(8)
+          height: hourlyFlickable.height + Style.space(14)
 
           Flickable {
             id: hourlyFlickable
@@ -1060,7 +1060,7 @@ Panel {
 
           Rectangle {
             visible: hourlyFlickable.contentWidth > hourlyFlickable.width
-            y: hourlyFlickable.height + Style.space(4)
+            y: hourlyFlickable.height + Style.space(10)
             width: parent.width
             height: Style.space(8)
             radius: height / 2
