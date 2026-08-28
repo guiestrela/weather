@@ -639,7 +639,7 @@ Panel {
     open: root.opened
     centerOnBar: true
     focusTarget: keyCatcher
-    contentWidth: Style.space(480)
+    contentWidth: Style.space(500)
     contentHeight: panel.fittedContentHeight(weatherColumn.implicitHeight)
 
     PanelKeyCatcher {
@@ -661,7 +661,7 @@ Panel {
 
         Column {
           id: weatherColumn
-          width: Style.space(480)
+          width: Style.space(500)
           spacing: Style.space(14)
 
       // ---- Hero row: big icon + temp on the left; location and stats stacked on the right.
@@ -717,7 +717,7 @@ Panel {
           id: heroRight
           width: weatherStats.implicitWidth
           anchors.right: parent.right
-          anchors.rightMargin: Style.space(20)
+          anchors.rightMargin: Style.space(70)
           anchors.verticalCenter: parent.verticalCenter
           spacing: Style.space(12)
 
@@ -818,7 +818,7 @@ Panel {
           Row {
             id: weatherStats
             visible: !!root.current
-            spacing: Style.space(36)
+            spacing: Style.space(20)
 
             Column {
               spacing: Style.space(5)
@@ -1028,26 +1028,18 @@ Panel {
               }
 
               Item {
-                width: Math.max(0, forecastList.width - Style.space(380))
+                width: Math.max(0, forecastList.width - Style.space(430))
                 height: 1
               }
 
               Text {
-                width: Style.space(48)
-                text: root.bareTempForDay(modelData, "max")
+                width: Style.space(140)
+                transform: Translate { x: -Style.space(50) }
+                text: root.bareTempForDay(modelData, "max") + " / " + root.bareTempForDay(modelData, "min")
                 color: root.bar.foreground
                 font.family: root.bar.fontFamily
                 font.pixelSize: Style.font.body
-                horizontalAlignment: Text.AlignRight
-                anchors.verticalCenter: parent.verticalCenter
-              }
-
-              Text {
-                width: Style.space(48)
-                text: root.bareTempForDay(modelData, "min")
-                color: Qt.darker(root.bar.foreground, 1.4)
-                font.family: root.bar.fontFamily
-                font.pixelSize: Style.font.body
+                wrapMode: Text.NoWrap
                 horizontalAlignment: Text.AlignRight
                 anchors.verticalCenter: parent.verticalCenter
               }
@@ -1103,14 +1095,17 @@ Panel {
             }
           }
 
-          Item { width: Math.max(0, parent.width - 180); height: 1 }
+          Item { width: Math.max(0, parent.width - 230); height: 1 }
 
           Text {
+            width: Style.space(70)
             visible: root.forecastPrecipitation(root.todayForecast) !== ""
             text: root.forecastPrecipitation(root.todayForecast)
             color: Qt.darker(root.bar.foreground, 1.3)
             font.family: root.bar.fontFamily
             font.pixelSize: Style.font.bodySmall
+            wrapMode: Text.NoWrap
+            horizontalAlignment: Text.AlignRight
             anchors.verticalCenter: parent.verticalCenter
           }
         }
@@ -1124,22 +1119,24 @@ Panel {
             id: hourlyFlickable
             width: parent.width
             height: hourlyRow.height
-            contentWidth: hourlyRow.width
+            contentWidth: hourlyRow.implicitWidth
             contentHeight: height
             clip: true
             boundsBehavior: Flickable.StopAtBounds
+            flickableDirection: Flickable.HorizontalFlick
             interactive: contentWidth > width
 
             Row {
               id: hourlyRow
-              spacing: Style.space(16)
+              width: implicitWidth
+              spacing: Style.space(8)
 
               Repeater {
                 model: root.todayHourlyForecast
 
                 Column {
                   required property var modelData
-                  width: Style.space(42)
+                  width: Style.space(48)
                   spacing: Style.space(3)
 
                   Text {
@@ -1167,6 +1164,13 @@ Panel {
                     horizontalAlignment: Text.AlignHCenter
                   }
                 }
+              }
+
+              // Trailing space lets the final hour scroll fully into view
+              // instead of stopping with its text clipped at the edge.
+              Item {
+                width: Style.space(24)
+                height: 1
               }
             }
           }
@@ -1344,7 +1348,7 @@ Panel {
         }
 
         Rectangle {
-          width: Style.space(480)
+          width: parent.width
           height: Style.space(260)
           radius: 0
           color: "transparent"
