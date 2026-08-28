@@ -1038,6 +1038,14 @@ Panel {
           }
         }
 
+        Rectangle {
+          visible: root.activities.length > 0
+          width: parent.width
+          height: Style.spacing.hairline
+          color: root.bar.foreground
+          opacity: 0.12
+        }
+
         Column {
           visible: root.activities.length > 0
           width: parent.width
