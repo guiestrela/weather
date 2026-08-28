@@ -253,7 +253,7 @@ function openMeteoTodayHourlyForecast(dailyForecastReport, todayString) {
       time: timestamp,
       tempC: roundedTemp(tempC),
       tempF: roundedTemp(celsiusToFahrenheit(tempC)),
-      weatherCode: hourly.weather_code ? hourly.weather_code[i] : null,
+      openMeteoWeatherCode: hourly.weather_code ? hourly.weather_code[i] : null,
       isDay: hourly.is_day ? hourly.is_day[i] : 1,
       precipitationProbability: hourly.precipitation_probability ? hourly.precipitation_probability[i] : null
     })
