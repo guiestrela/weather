@@ -1146,7 +1146,7 @@ Panel {
                   Rectangle {
                     required property var modelData
                     width: Style.space(140)
-                    height: activityContent.implicitHeight + Style.space(16)
+                    height: Style.space(64)
                     radius: Style.cornerRadius
                     color: Style.hoverFillFor(root.bar.foreground, modelData.status === "Good" ? Color.accent : root.bar.foreground)
                     opacity: 0.85
