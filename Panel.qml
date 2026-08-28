@@ -832,13 +832,8 @@ Panel {
         opacity: 0.12
       }
 
-      Loader {
-        width: parent.width
-        sourceComponent: todaySectionComponent
-      }
-
       Rectangle {
-        visible: !!root.todayForecast
+        visible: root.forecastTimeline.length > 0
         width: parent.width
         height: Style.spacing.hairline
         color: root.bar.foreground
@@ -936,14 +931,19 @@ Panel {
         }
       }
 
-      // ---- Detailed forecast for today, shown before the future days.
-      Component {
-        id: todaySectionComponent
+      // ---- Detailed forecast for today.
+      Rectangle {
+        visible: !!root.todayForecast
+        width: parent.width
+        height: Style.spacing.hairline
+        color: root.bar.foreground
+        opacity: 0.12
+      }
 
-        Column {
-          visible: !!root.todayForecast
-          width: parent.width
-          spacing: Style.space(8)
+      Column {
+        visible: !!root.todayForecast
+        width: parent.width
+        spacing: Style.space(8)
 
         Text {
           text: "TODAY"
@@ -1155,8 +1155,3 @@ Panel {
     }
   }
   }
-  }
-
-}
-
-}
