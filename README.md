@@ -10,6 +10,7 @@ Weather plugin for Omarchy, displayed as a widget in the top bar.
 - Detailed forecast for the current day, including high, low, and rain probability.
 - Hourly forecast for the current day with a draggable horizontal scrollbar.
 - Activity forecasts for hiking, cycling, running, and camping.
+- Live weather radar centered on the configured location.
 - Search for and change the location directly from the panel.
 - Automatic location detection when no city is configured.
 - Metric and imperial unit support.
@@ -97,6 +98,7 @@ This file is managed by the `omarchy-weather-location` command.
 - The current-day forecast displays the icon, high, low, and rain probability when provided by the API.
 - Added an hourly forecast strip with a draggable horizontal scrollbar.
 - Added hiking, cycling, running, and camping recommendations based on rain, wind, temperature, and storm conditions.
+- Added a live RainViewer radar section below the activity forecasts.
 - Added separate data normalization for today and future forecast days.
 - Reorganized the forecast into an aligned daily list with day/night symbols.
 
@@ -109,3 +111,6 @@ node --check Model.js
 ```
 
 The panel should be tested inside an Omarchy/Quickshell session because it depends on the `qs.Commons`, `qs.Ui`, and shell component modules.
+
+Radar imagery is provided by [RainViewer](https://www.rainviewer.com/) and is
+available for personal, educational, and small community use.

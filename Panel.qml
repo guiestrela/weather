@@ -71,6 +71,47 @@ Panel {
   property var report: null
   property var dailyForecastReport: null
   property string wttrLocation: ""
+  property string radarHost: "https://tilecache.rainviewer.com"
+  property string radarPath: ""
+
+  function radarCoordinate(value) {
+    var configured = parseFloat(String(value === "lat" ? configuredLocationState.latitude : configuredLocationState.longitude))
+    if (!isNaN(configured)) return String(configured)
+    var field = value === "lat" ? "latitude" : "longitude"
+    return areaInfo && areaInfo[field] && areaInfo[field][0] ? String(areaInfo[field][0].value) : ""
+  }
+
+  function refreshRadar() {
+    radarProc.running = true
+  }
+
+  Timer {
+    interval: 5 * 60 * 1000
+    running: true
+    repeat: true
+    triggeredOnStart: true
+    onTriggered: root.refreshRadar()
+  }
+
+  Process {
+    id: radarProc
+    command: ["curl", "-fsS", "--max-time", "8", "https://api.rainviewer.com/public/weather-maps.json"]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        try {
+          var parsed = JSON.parse(String(text || ""))
+          var frames = parsed.radar && parsed.radar.past ? parsed.radar.past : []
+          if (frames.length > 0) {
+            root.radarHost = parsed.host || "https://tilecache.rainviewer.com"
+            root.radarPath = frames[frames.length - 1].path || ""
+          }
+        } catch (e) {
+          // Keep the last valid radar frame when the service is unavailable.
+        }
+      }
+    }
+  }
 
   // Configured location, read from the weather.json state file (owned by
   // omarchy-weather-location). The query is the wttr.in path segment
@@ -1211,6 +1252,55 @@ Panel {
                 }
               }
             }
+          }
+        }
+      }
+
+      Rectangle {
+        visible: root.radarPath !== ""
+        width: parent.width
+        height: Style.spacing.hairline
+        color: root.bar.foreground
+        opacity: 0.12
+      }
+
+      Column {
+        visible: root.radarPath !== ""
+        width: parent.width
+        spacing: Style.space(8)
+
+        Text {
+          text: "RADAR AND MAPS"
+          color: Qt.darker(root.bar.foreground, 1.4)
+          font.family: root.bar.fontFamily
+          font.pixelSize: Style.font.caption
+          font.letterSpacing: 1
+        }
+
+        Rectangle {
+          width: parent.width
+          height: Style.space(220)
+          radius: Style.cornerRadius
+          color: Qt.darker(root.bar.foreground, 2.5)
+          clip: true
+
+          Image {
+            anchors.fill: parent
+            fillMode: Image.PreserveAspectCrop
+            source: root.radarHost + root.radarPath + "/512/5/" + root.radarCoordinate("lat") + "/" + root.radarCoordinate("lon") + "/2/1_1.png"
+            asynchronous: true
+          }
+
+          Text {
+            anchors.left: parent.left
+            anchors.bottom: parent.bottom
+            anchors.leftMargin: Style.space(8)
+            anchors.bottomMargin: Style.space(6)
+            text: "Weather radar by RainViewer"
+            color: root.bar.foreground
+            font.family: root.bar.fontFamily
+            font.pixelSize: Style.font.caption
+            opacity: 0.8
           }
         }
       }
