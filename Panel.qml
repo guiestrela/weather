@@ -135,7 +135,6 @@ Panel {
   readonly property var forecastDays: buildForecastDays()
   readonly property var forecastTimeline: Model.buildForecastTimeline(report, dailyForecastReport, Qt.formatDate(new Date(), "yyyy-MM-dd"))
   readonly property var todayForecast: Model.todayForecast(report, dailyForecastReport, Qt.formatDate(new Date(), "yyyy-MM-dd"))
-  readonly property var todayHourlyForecast: Model.openMeteoTodayHourlyForecast(dailyForecastReport, Qt.formatDate(new Date(), "yyyy-MM-dd"))
   readonly property var activities: Model.activityForecast(openMeteoCurrent, todayForecast)
   readonly property string reportCountry: areaInfo && areaInfo.country && areaInfo.country[0] ? areaInfo.country[0].value : ""
 
@@ -182,7 +181,6 @@ Panel {
       + "?latitude=" + encodeURIComponent(String(lat))
       + "&longitude=" + encodeURIComponent(String(lon))
       + "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max"
-      + "&hourly=temperature_2m,apparent_temperature,weather_code,is_day,precipitation_probability"
       + "&past_days=1"
       + "&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code,is_day"
       + "&forecast_days=6"
@@ -344,21 +342,6 @@ Panel {
   function forecastPrecipitation(day) {
     if (!day || day.precipitationProbability === undefined || day.precipitationProbability === null || day.precipitationProbability === "") return ""
     return Math.round(Number(day.precipitationProbability)) + "% rain"
-  }
-
-  function hourlyTemperature(hour) {
-    if (!hour) return ""
-    return root.useImperial ? hour.tempF + "°" : hour.tempC + "°"
-  }
-
-  function hourlyFeelsLike(hour) {
-    if (!hour || (hour.feelsLikeC === undefined && hour.feelsLikeF === undefined)) return ""
-    var value = root.useImperial ? hour.feelsLikeF : hour.feelsLikeC
-    return value === undefined || value === null || value === "" ? "" : "Feels " + value + "°"
-  }
-
-  function hourlyTime(hour) {
-    return hour && hour.time ? String(hour.time).slice(11, 16) : ""
   }
 
   function iconForOpenMeteoCode(code) {
@@ -829,6 +812,81 @@ Panel {
         font.italic: true
       }
 
+      // ---- Current-day summary appears before the multi-day list.
+      Column {
+        visible: !!root.todayForecast
+        width: parent.width
+        spacing: Style.space(8)
+
+        Text {
+          text: "TODAY"
+          color: Qt.darker(root.bar.foreground, 1.4)
+          font.family: root.bar.fontFamily
+          font.pixelSize: Style.font.caption
+          font.letterSpacing: 1
+        }
+
+        Row {
+          width: parent.width
+          spacing: Style.space(6)
+
+          Text {
+            width: Style.space(42)
+            text: root.forecastIcon(root.todayForecast, false)
+            color: root.bar.foreground
+            font.family: root.bar.fontFamily
+            font.pixelSize: Style.font.display
+            horizontalAlignment: Text.AlignHCenter
+            anchors.verticalCenter: parent.verticalCenter
+          }
+
+          Text {
+            width: Style.space(64)
+            text: root.forecastPrecipitation(root.todayForecast) || "—"
+            color: Qt.darker(root.bar.foreground, 1.3)
+            font.family: root.bar.fontFamily
+            font.pixelSize: Style.font.bodySmall
+            horizontalAlignment: Text.AlignHCenter
+            anchors.verticalCenter: parent.verticalCenter
+          }
+
+          Text {
+            width: Style.space(42)
+            text: root.forecastIcon(root.todayForecast, true)
+            color: Qt.darker(root.bar.foreground, 1.15)
+            font.family: root.bar.fontFamily
+            font.pixelSize: Style.font.display
+            horizontalAlignment: Text.AlignHCenter
+            anchors.verticalCenter: parent.verticalCenter
+          }
+
+          Item {
+            width: Math.max(0, parent.width - Style.space(250))
+            height: 1
+          }
+
+          Text {
+            width: Style.space(48)
+            text: root.bareTempForDay(root.todayForecast, "max")
+            color: root.bar.foreground
+            font.family: root.bar.fontFamily
+            font.pixelSize: Style.font.body
+            horizontalAlignment: Text.AlignRight
+            anchors.verticalCenter: parent.verticalCenter
+          }
+
+          Text {
+            width: Style.space(48)
+            text: root.bareTempForDay(root.todayForecast, "min")
+            color: Qt.darker(root.bar.foreground, 1.4)
+            font.family: root.bar.fontFamily
+            font.pixelSize: Style.font.body
+            horizontalAlignment: Text.AlignRight
+            anchors.verticalCenter: parent.verticalCenter
+          }
+        }
+      }
+
       // ---- Divider between current conditions and forecast.
       Rectangle {
         visible: root.forecastTimeline.length > 0
@@ -944,6 +1002,7 @@ Panel {
         spacing: Style.space(8)
 
         Text {
+          visible: false
           text: "TODAY"
           color: Qt.darker(root.bar.foreground, 1.4)
           font.family: root.bar.fontFamily
@@ -952,6 +1011,7 @@ Panel {
         }
 
         Row {
+          visible: false
           width: parent.width
           spacing: Style.space(12)
 
@@ -990,105 +1050,6 @@ Panel {
             font.family: root.bar.fontFamily
             font.pixelSize: Style.font.bodySmall
             anchors.verticalCenter: parent.verticalCenter
-          }
-        }
-
-        Item {
-          visible: root.todayHourlyForecast.length > 0
-          width: parent.width
-          height: hourlyFlickable.height + Style.space(8)
-
-          Flickable {
-            id: hourlyFlickable
-            width: parent.width
-            height: hourlyRow.height
-            contentWidth: hourlyRow.width
-            contentHeight: height
-            clip: true
-            boundsBehavior: Flickable.StopAtBounds
-            interactive: contentWidth > width
-
-            Row {
-              id: hourlyRow
-              spacing: Style.space(16)
-
-              Repeater {
-                model: root.todayHourlyForecast
-
-                Column {
-                  required property var modelData
-                  width: Style.space(42)
-                  spacing: Style.space(3)
-
-                  Text {
-                    width: parent.width
-                    text: root.hourlyTime(modelData)
-                    color: Qt.darker(root.bar.foreground, 1.4)
-                    font.family: root.bar.fontFamily
-                    font.pixelSize: Style.font.caption
-                    horizontalAlignment: Text.AlignHCenter
-                  }
-                  Text {
-                    width: parent.width
-                    text: root.dayIcon(modelData)
-                    color: root.bar.foreground
-                    font.family: root.bar.fontFamily
-                    font.pixelSize: Style.font.body
-                    horizontalAlignment: Text.AlignHCenter
-                  }
-                  Text {
-                    width: parent.width
-                    text: root.hourlyTemperature(modelData)
-                    color: root.bar.foreground
-                    font.family: root.bar.fontFamily
-                    font.pixelSize: Style.font.bodySmall
-                    horizontalAlignment: Text.AlignHCenter
-                  }
-                  Text {
-                    visible: root.hourlyFeelsLike(modelData) !== ""
-                    width: parent.width
-                    text: root.hourlyFeelsLike(modelData)
-                    color: Qt.darker(root.bar.foreground, 1.5)
-                    font.family: root.bar.fontFamily
-                    font.pixelSize: Style.font.caption
-                    horizontalAlignment: Text.AlignHCenter
-                  }
-                }
-              }
-            }
-          }
-
-          Rectangle {
-            visible: hourlyFlickable.contentWidth > hourlyFlickable.width
-            y: hourlyFlickable.height + Style.space(4)
-            width: parent.width
-            height: Style.space(3)
-            radius: height / 2
-            color: Qt.darker(root.bar.foreground, 2.2)
-            opacity: 0.25
-
-            Rectangle {
-              width: Math.max(Style.space(24), parent.width * hourlyFlickable.width / hourlyFlickable.contentWidth)
-              height: parent.height
-              radius: height / 2
-              x: (parent.width - width) * (hourlyFlickable.contentX / Math.max(1, hourlyFlickable.contentWidth - hourlyFlickable.width))
-              color: root.bar.foreground
-              opacity: 0.75
-            }
-
-            MouseArea {
-              anchors.fill: parent
-              preventStealing: true
-              onPressed: function(mouse) {
-                var ratio = Math.max(0, Math.min(1, mouse.x / width))
-                hourlyFlickable.contentX = ratio * Math.max(0, hourlyFlickable.contentWidth - hourlyFlickable.width)
-              }
-              onPositionChanged: function(mouse) {
-                if (!pressed) return
-                var ratio = Math.max(0, Math.min(1, mouse.x / width))
-                hourlyFlickable.contentX = ratio * Math.max(0, hourlyFlickable.contentWidth - hourlyFlickable.width)
-              }
-            }
           }
         }
 

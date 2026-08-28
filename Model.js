@@ -286,29 +286,6 @@ function buildForecastTimeline(report, dailyForecastReport, todayString) {
   return wttrDays.filter(function(day) { return String(day.date).slice(0, 10) >= String(todayString || "") }).slice(0, 6)
 }
 
-function openMeteoTodayHourlyForecast(dailyForecastReport, todayString) {
-  var hourly = dailyForecastReport && dailyForecastReport.hourly ? dailyForecastReport.hourly : null
-  if (!hourly || !hourly.time) return []
-
-  var result = []
-  for (var i = 0; i < hourly.time.length; ++i) {
-    var timestamp = String(hourly.time[i])
-    if (timestamp.slice(0, 10) !== String(todayString || "")) continue
-    var tempC = hourly.temperature_2m ? hourly.temperature_2m[i] : ""
-    result.push({
-      time: timestamp,
-      tempC: roundedTemp(tempC),
-      tempF: roundedTemp(celsiusToFahrenheit(tempC)),
-      feelsLikeC: roundedTemp(hourly.apparent_temperature ? hourly.apparent_temperature[i] : ""),
-      feelsLikeF: roundedTemp(celsiusToFahrenheit(hourly.apparent_temperature ? hourly.apparent_temperature[i] : "")),
-      openMeteoWeatherCode: hourly.weather_code ? hourly.weather_code[i] : null,
-      isDay: hourly.is_day ? hourly.is_day[i] : 1,
-      precipitationProbability: hourly.precipitation_probability ? hourly.precipitation_probability[i] : null
-    })
-  }
-  return result
-}
-
 function activityForecast(current, today) {
   var code = current && current.openMeteoWeatherCode !== undefined ? Number(current.openMeteoWeatherCode) : 0
   var rain = today && today.precipitationProbability !== undefined && today.precipitationProbability !== null ? Number(today.precipitationProbability) : 0
@@ -418,7 +395,6 @@ if (typeof module !== "undefined") {
     wttrTodayForecast: wttrTodayForecast,
     todayForecast: todayForecast,
     buildForecastTimeline: buildForecastTimeline,
-    openMeteoTodayHourlyForecast: openMeteoTodayHourlyForecast,
     activityForecast: activityForecast,
     buildForecastDays: buildForecastDays,
     bareTempForDay: bareTempForDay,
