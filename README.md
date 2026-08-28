@@ -9,7 +9,7 @@ Weather plugin for Omarchy, displayed as a widget in the top bar.
 - Forecast for the next 5 days, including yesterday and today.
 - Detailed forecast for the current day, including high, low, and rain probability.
 - Hourly forecast for the current day with a draggable horizontal scrollbar.
-- Activity forecasts for hiking, cycling, and running.
+- Activity forecasts for hiking, cycling, running, and camping.
 - Search for and change the location directly from the panel.
 - Automatic location detection when no city is configured.
 - Metric and imperial unit support.
@@ -88,7 +88,7 @@ This file is managed by the `omarchy-weather-location` command.
 - Added a dedicated current-day forecast section below the future forecast.
 - The current-day forecast displays the icon, high, low, and rain probability when provided by the API.
 - Added an hourly forecast strip with a draggable horizontal scrollbar.
-- Added hiking, cycling, and running recommendations based on rain, wind, temperature, and storm conditions.
+- Added hiking, cycling, running, and camping recommendations based on rain, wind, temperature, and storm conditions.
 - Added separate data normalization for today and future forecast days.
 - Reorganized the forecast into an aligned daily list with day/night symbols.
 

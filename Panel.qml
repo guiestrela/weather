@@ -394,9 +394,11 @@ Panel {
         } catch (e) {
           // Keep last-good report visible, but try again shortly.
           root.scheduleForecastRetry()
-        }
-      }
-    }
+  }
+  }
+  }
+
+}
   }
 
   // wttr.in can be slow or flaky, especially for a location it hasn't
@@ -1117,47 +1119,94 @@ Panel {
             font.letterSpacing: 1
           }
 
-          Row {
+          Item {
             width: parent.width
-            spacing: Style.space(8)
+            height: activityFlickable.height + Style.space(14)
 
-            Repeater {
-              model: root.activities
+            Flickable {
+              id: activityFlickable
+              width: parent.width
+              height: activityRow.height
+              contentWidth: activityRow.width
+              contentHeight: height
+              clip: true
+              boundsBehavior: Flickable.StopAtBounds
+              interactive: contentWidth > width
+
+              Row {
+                id: activityRow
+                spacing: Style.space(8)
+
+                Repeater {
+                  model: root.activities
+
+                  Rectangle {
+                    required property var modelData
+                    width: Style.space(140)
+                    height: activityContent.implicitHeight + Style.space(16)
+                    radius: Style.cornerRadius
+                    color: Style.hoverFillFor(root.bar.foreground, modelData.status === "Good" ? Color.accent : root.bar.foreground)
+                    opacity: 0.85
+
+                    Column {
+                      id: activityContent
+                      anchors.left: parent.left
+                      anchors.right: parent.right
+                      anchors.verticalCenter: parent.verticalCenter
+                      anchors.leftMargin: Style.space(8)
+                      anchors.rightMargin: Style.space(8)
+                      spacing: Style.space(3)
+
+                      Text {
+                        text: modelData.symbol + "  " + modelData.name
+                        color: root.bar.foreground
+                        font.family: root.bar.fontFamily
+                        font.pixelSize: Style.font.bodySmall
+                        font.bold: true
+                      }
+                      Text {
+                        text: modelData.status
+                        color: root.bar.foreground
+                        font.family: root.bar.fontFamily
+                        font.pixelSize: Style.font.bodySmall
+                      }
+                    }
+                  }
+                }
+              }
+            }
+
+            Rectangle {
+              visible: activityFlickable.contentWidth > activityFlickable.width
+              y: activityFlickable.height + Style.space(6)
+              width: parent.width
+              height: Style.space(8)
+              radius: height / 2
+              color: Qt.darker(root.bar.foreground, 2.2)
+              opacity: 0.25
 
               Rectangle {
-                required property var modelData
-                width: (parent.width - Style.space(16)) / 3
-                height: activityContent.implicitHeight + Style.space(16)
-                radius: Style.cornerRadius
-                color: Style.hoverFillFor(root.bar.foreground, modelData.status === "Good" ? Color.accent : root.bar.foreground)
-                opacity: 0.85
+                width: Math.max(Style.space(24), parent.width * activityFlickable.width / activityFlickable.contentWidth)
+                height: parent.height
+                radius: height / 2
+                x: (parent.width - width) * (activityFlickable.contentX / Math.max(1, activityFlickable.contentWidth - activityFlickable.width))
+                color: root.bar.foreground
+                opacity: 0.75
+              }
 
-                Column {
-                  id: activityContent
-                  anchors.left: parent.left
-                  anchors.right: parent.right
-                  anchors.verticalCenter: parent.verticalCenter
-                  anchors.leftMargin: Style.space(8)
-                  anchors.rightMargin: Style.space(8)
-                  spacing: Style.space(3)
-
-                  Text {
-                    text: modelData.symbol + "  " + modelData.name
-                    color: root.bar.foreground
-                    font.family: root.bar.fontFamily
-                    font.pixelSize: Style.font.bodySmall
-                    font.bold: true
-                  }
-                  Text {
-                    text: modelData.status
-                    color: root.bar.foreground
-                    font.family: root.bar.fontFamily
-                    font.pixelSize: Style.font.bodySmall
-  }
-  }
-  }
-
-}
+              MouseArea {
+                anchors.fill: parent
+                preventStealing: true
+                onPressed: function(mouse) {
+                  var ratio = Math.max(0, Math.min(1, mouse.x / width))
+                  activityFlickable.contentX = ratio * Math.max(0, activityFlickable.contentWidth - activityFlickable.width)
+                }
+                onPositionChanged: function(mouse) {
+                  if (!pressed) return
+                  var ratio = Math.max(0, Math.min(1, mouse.x / width))
+                  activityFlickable.contentX = ratio * Math.max(0, activityFlickable.contentWidth - activityFlickable.width)
+                }
+              }
             }
           }
         }

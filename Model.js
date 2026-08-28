@@ -319,9 +319,10 @@ function activityForecast(current, today) {
   }
 
   return [
-    result("Hiking", "", !wet && !storm && wind < 35 && temp > 8 && temp < 34, wet || storm ? "Rain is expected today" : "Conditions are challenging today"),
-    result("Cycling", "", !wet && !storm && wind < 28 && temp > 10 && temp < 32, wet || storm ? "Poor weather for cycling" : "Wind or temperature may be uncomfortable"),
-    result("Running", "", !storm && rain < 60 && temp > 5 && temp < 30, storm || rain >= 60 ? "Rain is expected today" : "Warm or windy conditions")
+    result("Hiking", "⛰", !wet && !storm && wind < 35 && temp > 8 && temp < 34, wet || storm ? "Rain is expected today" : "Conditions are challenging today"),
+    result("Cycling", "🚲", !wet && !storm && wind < 28 && temp > 10 && temp < 32, wet || storm ? "Poor weather for cycling" : "Wind or temperature may be uncomfortable"),
+    result("Running", "🏃", !storm && rain < 60 && temp > 5 && temp < 30, storm || rain >= 60 ? "Rain is expected today" : "Warm or windy conditions"),
+    result("Camping", "⛺", !wet && !storm && rain < 35 && temp > 8 && temp < 30, wet || storm ? "Rain is expected today" : "Check wind and overnight temperature")
   ]
 }
 
