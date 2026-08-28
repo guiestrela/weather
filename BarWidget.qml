@@ -46,7 +46,10 @@ BarWidget {
     if (panelLoader.item) panelLoader.item.closeForPopoutSwitch()
   }
 
-  visible: panelLoader.item && panelLoader.item.label !== ""
+  // Keep a stable slot in the bar while the weather request is loading.
+  // Waiting for `label` made the widget disappear whenever the first request
+  // was slow or temporarily unavailable.
+  visible: panelLoader.item !== null
   implicitWidth: button.implicitWidth
   implicitHeight: button.implicitHeight
 
@@ -68,7 +71,7 @@ BarWidget {
     id: button
     anchors.fill: parent
     bar: root.bar
-    text: panelLoader.item ? panelLoader.item.label : ""
+    text: panelLoader.item && panelLoader.item.label !== "" ? panelLoader.item.label : "☁"
     slotSize: Style.bar.statusSlot
     // Tooltip suppressed because the panel is the detail view.
     tooltipText: ""
