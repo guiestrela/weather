@@ -802,7 +802,7 @@ Panel {
         opacity: 0.12
       }
 
-      // ---- Seven-day forecast, arranged in compact cards.
+      // ---- Seven-day forecast, arranged in two columns of compact cards.
       Item {
         visible: root.forecastDays.length > 0
         width: parent.width
@@ -811,7 +811,7 @@ Panel {
         Grid {
           id: forecastGrid
           width: parent.width
-          columns: 4
+          columns: 2
           rowSpacing: Style.space(12)
           columnSpacing: Style.space(4)
 
@@ -821,7 +821,7 @@ Panel {
             Row {
               required property var modelData
               required property int index
-              width: (forecastGrid.width - Style.space(12)) / 4
+              width: (forecastGrid.width - Style.space(4)) / 2
               height: forecastCard.implicitHeight
               spacing: Style.space(10)
 

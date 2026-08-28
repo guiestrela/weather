@@ -86,7 +86,7 @@ This file is managed by the `omarchy-weather-location` command.
 - Added a dedicated current-day forecast section below the future forecast.
 - The current-day forecast displays the icon, high, low, and rain probability when provided by the API.
 - Added separate data normalization for today and future forecast days.
-- Reorganized the forecast into compact cards that fit inside the panel.
+- Reorganized the forecast into compact cards displayed in two columns.
 
 ## Development
 
