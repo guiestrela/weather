@@ -837,9 +837,14 @@ Panel {
       }
 
       Loader {
+        id: todayLoader
         width: parent.width
         height: item ? item.implicitHeight : 0
-        sourceComponent: todaySectionComponent
+        active: false
+        Component.onCompleted: {
+          sourceComponent = todaySectionComponent
+          active = true
+        }
       }
 
       Rectangle {
