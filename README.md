@@ -86,7 +86,7 @@ This file is managed by the `omarchy-weather-location` command.
 - Reduced the daily query to fetch only the displayed forecast range.
 - Added a dedicated current-day forecast section below the future forecast.
 - The current-day forecast displays the icon, high, low, and rain probability when provided by the API.
-- Added an hourly forecast strip for the current day with three-hour intervals.
+- Added a horizontally scrollable hourly forecast strip with one-hour intervals.
 - Added hiking, cycling, and running recommendations based on rain, wind, temperature, and storm conditions.
 - Added separate data normalization for today and future forecast days.
 - Reorganized the forecast into an aligned daily list with day/night symbols.

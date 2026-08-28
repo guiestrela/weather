@@ -291,14 +291,9 @@ function openMeteoTodayHourlyForecast(dailyForecastReport, todayString) {
   if (!hourly || !hourly.time) return []
 
   var result = []
-  var firstHourIndex = -1
   for (var i = 0; i < hourly.time.length; ++i) {
     var timestamp = String(hourly.time[i])
     if (timestamp.slice(0, 10) !== String(todayString || "")) continue
-    if (firstHourIndex < 0) firstHourIndex = i
-    // Display every three hours to keep the strip compact while still
-    // covering the complete current day.
-    if ((i - firstHourIndex) % 3 !== 0) continue
     var tempC = hourly.temperature_2m ? hourly.temperature_2m[i] : ""
     result.push({
       time: timestamp,
