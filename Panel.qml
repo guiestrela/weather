@@ -394,11 +394,9 @@ Panel {
         } catch (e) {
           // Keep last-good report visible, but try again shortly.
           root.scheduleForecastRetry()
-  }
-  }
-  }
-
-}
+        }
+      }
+    }
   }
 
   // wttr.in can be slow or flaky, especially for a location it hasn't
@@ -518,12 +516,12 @@ Panel {
   IpcHandler {
     target: root.ipcTarget
 
-    function open(): void { root.openFromHotkey() }
-    function close(): void { root.close() }
-    function show(): void { root.openFromHotkey() }
-    function hide(): void { root.close() }
-    function toggle(): void { root.toggle() }
-    function edit(): void { root.openFromHotkey(); root.startEditingLocation() }
+    function open() { root.openFromHotkey() }
+    function close() { root.close() }
+    function show() { root.openFromHotkey() }
+    function hide() { root.close() }
+    function toggle() { root.toggle() }
+    function edit() { root.openFromHotkey(); root.startEditingLocation() }
   }
 
   KeyboardPanel {
@@ -1204,3 +1202,5 @@ Panel {
     }
   }
   }
+
+}
