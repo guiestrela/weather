@@ -2,6 +2,16 @@
 
 Weather plugin for Omarchy, displayed as a widget in the top bar.
 
+## Preview
+
+### Metric units
+
+![Omarchy Weather panel showing metric units, forecast, activity recommendations, and radar map](preview.png)
+
+### Imperial units
+
+![Omarchy Weather panel showing imperial units, forecast, activity recommendations, and radar map](preview2.png)
+
 ## Features
 
 - Current temperature and weather icon.
@@ -19,24 +29,10 @@ Weather plugin for Omarchy, displayed as a widget in the top bar.
 
 ## Installation
 
-Install this plugin from the `guiestrela/weather` GitHub repository with the standard Omarchy plugin manager:
+Install and configure the plugin with the standard Omarchy plugin manager:
 
 ```bash
-omarchy plugin add https://github.com/guiestrela/weather.git --enable
-omarchy plugin disable omarchy.weather
-omarchy bar move io.github.guiestrela.weather --section center --index 4
-omarchy restart shell
-```
-
-The additional commands replace the built-in `omarchy.weather` widget in the
-bar with this plugin. To install it without enabling it immediately, omit
-`--enable`, then run:
-
-```bash
-omarchy plugin enable io.github.guiestrela.weather --section right
-omarchy plugin disable omarchy.weather
-omarchy bar move io.github.guiestrela.weather --section center --index 4
-omarchy restart shell
+omarchy plugin add https://github.com/guiestrela/weather.git --enable && omarchy plugin disable omarchy.weather && omarchy bar move io.github.guiestrela.weather --section center --index 4 && omarchy restart shell
 ```
 
 Verify the installation with:
