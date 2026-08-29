@@ -72,9 +72,9 @@ Panel {
   property var dailyForecastReport: null
   property string wttrLocation: ""
   property string radarHost: "https://tilecache.rainviewer.com"
-  // Latest public RainViewer frame used as a startup fallback; refreshRadar
-  // replaces it with the newest frame when the API response arrives.
-  property string radarPath: "/v2/radar/5064c151ce47"
+  // Filled from RainViewer's metadata endpoint. Radar paths are short-lived
+  // and must not be hard-coded here.
+  property string radarPath: ""
   property string radarLatitude: ""
   property string radarLongitude: ""
   // Rain radar is always enabled; the base satellite imagery remains visible
@@ -157,14 +157,20 @@ Panel {
 
   Process {
     id: radarProc
-    command: ["sh", "-c", "curl -fsS --max-time 8 https://api.rainviewer.com/public/weather-maps.json | grep -o '\"path\":\"[^\"]*\"' | tail -1 | sed 's/.*\"path\":\"//;s/\"$//'" ]
+    command: ["curl", "-fsS", "--max-time", "8", "https://api.rainviewer.com/public/weather-maps.json"]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
-        var framePath = String(text || "").trim()
-        if (framePath) {
-          root.radarPath = framePath
-        } else {
+        try {
+          var parsed = JSON.parse(String(text || ""))
+          var frames = parsed.radar && parsed.radar.past ? parsed.radar.past : []
+          if (frames.length > 0 && frames[frames.length - 1].path) {
+            root.radarHost = parsed.host || "https://tilecache.rainviewer.com"
+            root.radarPath = frames[frames.length - 1].path
+          } else {
+            radarRetryTimer.restart()
+          }
+        } catch (e) {
           radarRetryTimer.restart()
         }
       }
@@ -1326,7 +1332,7 @@ Panel {
         }
 
       Rectangle {
-        visible: root.radarPath !== ""
+        visible: root.radarCoordinate("lat") !== "" && root.radarCoordinate("lon") !== ""
         width: parent.width
         height: Style.spacing.hairline
         color: root.bar.foreground
@@ -1334,7 +1340,7 @@ Panel {
       }
 
       Column {
-        visible: root.radarPath !== ""
+        visible: root.radarCoordinate("lat") !== "" && root.radarCoordinate("lon") !== ""
         width: parent.width
         spacing: Style.space(8)
 
@@ -1405,7 +1411,7 @@ Panel {
             asynchronous: true
             smooth: false
             opacity: 1
-            visible: root.selectedMapLayer === "rain"
+            visible: root.selectedMapLayer === "rain" && root.radarPath !== ""
           }
 
           // The map mosaic is positioned so the configured location is at
