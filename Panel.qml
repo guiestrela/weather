@@ -803,6 +803,19 @@ Panel {
               // the Style.font.* scale.
               font.pixelSize: 56
               font.bold: true
+
+              MouseArea {
+                id: tempHover
+                anchors.fill: parent
+                hoverEnabled: true
+                acceptedButtons: Qt.NoButton
+
+                PanelToolTip {
+                  visible: tempHover.containsMouse
+                  text: "Temperature: " + (root.reportTempNum || "—") + root.tempUnit
+                  fontFamily: root.bar.fontFamily
+                }
+              }
             }
             Text {
               text: root.current ? root.tempUnit : ""
@@ -813,18 +826,6 @@ Panel {
               anchors.topMargin: Style.space(10)
             }
 
-            MouseArea {
-              id: tempHover
-              anchors.fill: parent
-              hoverEnabled: true
-              acceptedButtons: Qt.NoButton
-
-              PanelToolTip {
-                visible: tempHover.containsMouse
-                text: "Temperature: " + (root.reportTempNum || "—") + root.tempUnit
-                fontFamily: root.bar.fontFamily
-              }
-            }
           }
         }
 
@@ -842,10 +843,16 @@ Panel {
 
             MouseArea {
               id: cityHover
-              anchors.fill: parent
+              anchors.fill: cityName
               hoverEnabled: true
               cursorShape: Qt.PointingHandCursor
               onClicked: root.startEditingLocation()
+
+              PanelToolTip {
+                visible: cityHover.containsMouse
+                text: "City: " + root.reportLocation + " (click to change)"
+                fontFamily: root.bar.fontFamily
+              }
             }
 
             Text {
@@ -856,6 +863,7 @@ Panel {
               anchors.verticalCenter: parent.verticalCenter
             }
             Text {
+              id: cityName
               text: (root.reportLocation || "").toUpperCase()
               color: Qt.darker(root.bar.foreground, 1.4)
               font.family: root.bar.fontFamily
@@ -864,11 +872,6 @@ Panel {
               anchors.verticalCenter: parent.verticalCenter
             }
 
-            PanelToolTip {
-              visible: cityHover.containsMouse
-              text: "City: " + root.reportLocation + " (click to change)"
-              fontFamily: root.bar.fontFamily
-            }
           }
 
           Row {
@@ -973,18 +976,17 @@ Panel {
                 color: root.bar.foreground
                 font.family: root.bar.fontFamily
                 font.pixelSize: Style.font.title
-              }
+                MouseArea {
+                  id: windHover
+                  anchors.fill: parent
+                  hoverEnabled: true
+                  acceptedButtons: Qt.NoButton
 
-              MouseArea {
-                id: windHover
-                anchors.fill: parent
-                hoverEnabled: true
-                acceptedButtons: Qt.NoButton
-
-                PanelToolTip {
-                  visible: windHover.containsMouse
-                  text: "Wind: " + root.reportWind
-                  fontFamily: root.bar.fontFamily
+                  PanelToolTip {
+                    visible: windHover.containsMouse
+                    text: "Wind: " + root.reportWind
+                    fontFamily: root.bar.fontFamily
+                  }
                 }
               }
             }
@@ -1003,17 +1005,17 @@ Panel {
                 color: root.bar.foreground
                 font.family: root.bar.fontFamily
                 font.pixelSize: Style.font.title
-              }
-              MouseArea {
-                id: humidityHover
-                anchors.fill: parent
-                hoverEnabled: true
-                acceptedButtons: Qt.NoButton
+                MouseArea {
+                  id: humidityHover
+                  anchors.fill: parent
+                  hoverEnabled: true
+                  acceptedButtons: Qt.NoButton
 
-                PanelToolTip {
-                  visible: humidityHover.containsMouse
-                  text: "Humidity: " + root.reportHumidity
-                  fontFamily: root.bar.fontFamily
+                  PanelToolTip {
+                    visible: humidityHover.containsMouse
+                    text: "Humidity: " + root.reportHumidity
+                    fontFamily: root.bar.fontFamily
+                  }
                 }
               }
             }
