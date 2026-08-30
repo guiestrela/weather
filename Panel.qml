@@ -88,6 +88,7 @@ Panel {
   property int radarZoom: 7
   property bool activitiesExpanded: true
   property bool mapsExpanded: true
+  property string panelStatePath: Quickshell.env("HOME") + "/.local/state/omarchy/settings/weather-panel.json"
   // QML does not always track dependencies read indirectly from JavaScript
   // functions. Bump this when a new auto-detected report supplies map
   // coordinates so tile URL bindings are evaluated again.
@@ -108,6 +109,25 @@ Panel {
     else if (typeof raw === "object") raw = raw.value
     var coordinate = parseFloat(String(raw === undefined || raw === null ? "" : raw))
     return isNaN(coordinate) ? "" : String(coordinate)
+  }
+
+  function loadPanelState(raw) {
+    try {
+      var state = JSON.parse(String(raw || ""))
+      if (state && typeof state === "object") {
+        if (state.activitiesExpanded !== undefined) activitiesExpanded = state.activitiesExpanded !== false
+        if (state.mapsExpanded !== undefined) mapsExpanded = state.mapsExpanded !== false
+      }
+    } catch (e) {
+      // Missing or invalid state keeps the expanded defaults.
+    }
+  }
+
+  function savePanelState() {
+    panelStateFile.setText(JSON.stringify({
+      activitiesExpanded: activitiesExpanded,
+      mapsExpanded: mapsExpanded
+    }) + "\n")
   }
 
   function mapTile(value, offset) {
@@ -277,6 +297,16 @@ Panel {
     onFileChanged: reload()
     onLoaded: root.configuredLocationState = Model.parseLocationFile(text())
     onLoadFailed: root.configuredLocationState = Model.parseLocationFile("")
+  }
+
+  FileView {
+    id: panelStateFile
+    path: root.panelStatePath
+    watchChanges: true
+    atomicWrites: true
+    printErrors: false
+    onLoaded: root.loadPanelState(text())
+    onFileChanged: reload()
   }
 
   // The first read can race shell startup (observed sporadically), leaving a
@@ -1337,7 +1367,10 @@ Panel {
               MouseArea {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
-                onClicked: root.activitiesExpanded = !root.activitiesExpanded
+                onClicked: {
+                  root.activitiesExpanded = !root.activitiesExpanded
+                  root.savePanelState()
+                }
               }
             }
 
@@ -1346,7 +1379,10 @@ Panel {
               anchors.right: activityTitle.right
               anchors.verticalCenter: activityTitle.verticalCenter
               height: activityTitle.height + Style.space(8)
-              onClicked: root.activitiesExpanded = !root.activitiesExpanded
+              onClicked: {
+                root.activitiesExpanded = !root.activitiesExpanded
+                root.savePanelState()
+              }
             }
           }
 
@@ -1495,7 +1531,10 @@ Panel {
             MouseArea {
               anchors.fill: parent
               cursorShape: Qt.PointingHandCursor
-              onClicked: root.mapsExpanded = !root.mapsExpanded
+              onClicked: {
+                root.mapsExpanded = !root.mapsExpanded
+                root.savePanelState()
+              }
             }
           }
 
@@ -1504,7 +1543,10 @@ Panel {
             anchors.right: mapsTitle.right
             anchors.verticalCenter: mapsTitle.verticalCenter
             height: mapsTitle.height + Style.space(8)
-            onClicked: root.mapsExpanded = !root.mapsExpanded
+            onClicked: {
+              root.mapsExpanded = !root.mapsExpanded
+              root.savePanelState()
+            }
           }
         }
 
