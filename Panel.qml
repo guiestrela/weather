@@ -833,10 +833,11 @@ Panel {
 
         Column {
           id: heroRight
-          width: weatherStats.implicitWidth
+          width: Math.max(weatherStats.implicitWidth, Style.space(150))
           anchors.right: parent.right
           anchors.rightMargin: Style.space(70)
-          anchors.verticalCenter: parent.verticalCenter
+          anchors.top: parent.top
+          anchors.topMargin: Style.space(8)
           spacing: Style.space(12)
 
           Row {
