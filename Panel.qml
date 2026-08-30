@@ -86,6 +86,10 @@ Panel {
   property int mapMinZoom: 3
   property int mapMaxZoom: 10
   property int radarZoom: 7
+  // QML does not always track dependencies read indirectly from JavaScript
+  // functions. Bump this when a new auto-detected report supplies map
+  // coordinates so tile URL bindings are evaluated again.
+  property int mapRevision: 0
 
   function radarCoordinate(value) {
     var configured = parseFloat(String(value === "lat" ? configuredLocationState.latitude : configuredLocationState.longitude))
@@ -542,6 +546,7 @@ Panel {
         try {
           var parsed = JSON.parse(raw)
           root.report = parsed
+          root.mapRevision++
           if (!root.hasConfiguredCoordinates)
             root.label = Model.provisionalCurrentIcon(parsed.current_condition && parsed.current_condition[0], root.label)
           root.forecastRetries = 0
@@ -1443,7 +1448,13 @@ Panel {
                 y: Math.floor(index / 3) * Style.space(256)
                 width: Style.space(256)
                 height: Style.space(256)
-                source: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/" + root.mapZoom + "/" + root.mapTile("y", -1 + Math.floor(index / 3)) + "/" + root.mapTile("x", -1 + (index % 3))
+                source: {
+                  // Explicit dependency: mapTile() reads auto-detected
+                  // coordinates through areaInfo, which QML cannot reliably
+                  // observe when the read is indirect.
+                  var revision = root.mapRevision
+                  return "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/" + root.mapZoom + "/" + root.mapTile("y", -1 + Math.floor(index / 3)) + "/" + root.mapTile("x", -1 + (index % 3))
+                }
                 asynchronous: true
                 smooth: false
                 opacity: 0.78
@@ -1461,7 +1472,10 @@ Panel {
                 y: Math.floor(index / 3) * Style.space(256)
                 width: Style.space(256)
                 height: Style.space(256)
-                source: "https://a.basemaps.cartocdn.com/light_only_labels/" + root.mapZoom + "/" + root.mapTile("x", -1 + (index % 3)) + "/" + root.mapTile("y", -1 + Math.floor(index / 3)) + ".png"
+                source: {
+                  var revision = root.mapRevision
+                  return "https://a.basemaps.cartocdn.com/light_only_labels/" + root.mapZoom + "/" + root.mapTile("x", -1 + (index % 3)) + "/" + root.mapTile("y", -1 + Math.floor(index / 3)) + ".png"
+                }
                 asynchronous: true
                 smooth: false
                 opacity: 0.9
