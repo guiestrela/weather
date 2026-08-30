@@ -794,10 +794,6 @@ Panel {
             anchors.verticalCenter: parent.verticalCenter
             spacing: Style.space(2)
 
-            HoverHandler {
-              id: tempHover
-            }
-
             Text {
               id: tempBig
               text: root.reportTempNum || "—"
@@ -817,10 +813,17 @@ Panel {
               anchors.topMargin: Style.space(10)
             }
 
-            PanelToolTip {
-              visible: tempHover.hovered
-              text: "Temperature: " + (root.reportTempNum || "—") + root.tempUnit
-              fontFamily: root.bar.fontFamily
+            MouseArea {
+              id: tempHover
+              anchors.fill: parent
+              hoverEnabled: true
+              acceptedButtons: Qt.NoButton
+
+              PanelToolTip {
+                visible: tempHover.containsMouse
+                text: "Temperature: " + (root.reportTempNum || "—") + root.tempUnit
+                fontFamily: root.bar.fontFamily
+              }
             }
           }
         }
@@ -837,12 +840,12 @@ Panel {
             visible: !root.editingLocation && root.reportLocation !== ""
             spacing: Style.space(6)
 
-            TapHandler {
-              onTapped: root.startEditingLocation()
-            }
-            HoverHandler {
+            MouseArea {
               id: cityHover
+              anchors.fill: parent
+              hoverEnabled: true
               cursorShape: Qt.PointingHandCursor
+              onClicked: root.startEditingLocation()
             }
 
             Text {
@@ -862,7 +865,7 @@ Panel {
             }
 
             PanelToolTip {
-              visible: cityHover.hovered
+              visible: cityHover.containsMouse
               text: "City: " + root.reportLocation + " (click to change)"
               fontFamily: root.bar.fontFamily
             }
@@ -958,9 +961,6 @@ Panel {
 
             Column {
               spacing: Style.space(5)
-              HoverHandler {
-                id: windHover
-              }
               Text {
                 text: "WIND"
                 color: Qt.darker(root.bar.foreground, 1.5)
@@ -975,18 +975,22 @@ Panel {
                 font.pixelSize: Style.font.title
               }
 
-              PanelToolTip {
-                visible: windHover.hovered
-                text: "Wind: " + root.reportWind
-                fontFamily: root.bar.fontFamily
+              MouseArea {
+                id: windHover
+                anchors.fill: parent
+                hoverEnabled: true
+                acceptedButtons: Qt.NoButton
+
+                PanelToolTip {
+                  visible: windHover.containsMouse
+                  text: "Wind: " + root.reportWind
+                  fontFamily: root.bar.fontFamily
+                }
               }
             }
 
             Column {
               spacing: Style.space(5)
-              HoverHandler {
-                id: humidityHover
-              }
               Text {
                 text: "HUMID"
                 color: Qt.darker(root.bar.foreground, 1.5)
@@ -1000,10 +1004,17 @@ Panel {
                 font.family: root.bar.fontFamily
                 font.pixelSize: Style.font.title
               }
-              PanelToolTip {
-                visible: humidityHover.hovered
-                text: "Humidity: " + root.reportHumidity
-                fontFamily: root.bar.fontFamily
+              MouseArea {
+                id: humidityHover
+                anchors.fill: parent
+                hoverEnabled: true
+                acceptedButtons: Qt.NoButton
+
+                PanelToolTip {
+                  visible: humidityHover.containsMouse
+                  text: "Humidity: " + root.reportHumidity
+                  fontFamily: root.bar.fontFamily
+                }
               }
             }
           }
