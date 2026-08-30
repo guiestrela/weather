@@ -1307,12 +1307,14 @@ Panel {
           width: parent.width
           spacing: Style.space(8)
 
-          Row {
+          Item {
             width: parent.width
             height: Style.space(18)
 
             Text {
               id: activityTitle
+              anchors.left: parent.left
+              anchors.verticalCenter: parent.verticalCenter
               text: "ACTIVITY FORECASTS"
               color: Qt.darker(root.bar.foreground, 1.4)
               font.family: root.bar.fontFamily
@@ -1320,12 +1322,13 @@ Panel {
               font.letterSpacing: 1
             }
 
-            Item { width: Math.max(0, parent.width - activityTitle.implicitWidth - activityToggle.width); height: 1 }
-
             Text {
               id: activityToggle
-              width: Style.space(24)
-              text: root.activitiesExpanded ? "▾" : "▸"
+              anchors.left: activityTitle.right
+              anchors.verticalCenter: parent.verticalCenter
+              anchors.leftMargin: Style.space(8)
+              width: Style.space(34)
+              text: root.activitiesExpanded ? "[-]" : "[+]"
               color: root.bar.foreground
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.body
@@ -1336,6 +1339,14 @@ Panel {
                 cursorShape: Qt.PointingHandCursor
                 onClicked: root.activitiesExpanded = !root.activitiesExpanded
               }
+            }
+
+            MouseArea {
+              anchors.left: activityTitle.left
+              anchors.right: activityTitle.right
+              anchors.verticalCenter: activityTitle.verticalCenter
+              height: activityTitle.height + Style.space(8)
+              onClicked: root.activitiesExpanded = !root.activitiesExpanded
             }
           }
 
@@ -1453,12 +1464,14 @@ Panel {
         width: parent.width
         spacing: Style.space(8)
 
-        Row {
+        Item {
           width: parent.width
           height: Style.space(20)
 
           Text {
             id: mapsTitle
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
             text: "RADAR AND MAPS"
             color: Qt.darker(root.bar.foreground, 1.4)
             font.family: root.bar.fontFamily
@@ -1467,12 +1480,13 @@ Panel {
             font.letterSpacing: 1
           }
 
-          Item { width: Math.max(0, parent.width - mapsToggle.width - mapsTitle.implicitWidth); height: 1 }
-
           Text {
             id: mapsToggle
-            width: Style.space(24)
-            text: root.mapsExpanded ? "▾" : "▸"
+            anchors.left: mapsTitle.right
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.leftMargin: Style.space(8)
+            width: Style.space(34)
+            text: root.mapsExpanded ? "[-]" : "[+]"
             color: root.bar.foreground
             font.family: root.bar.fontFamily
             font.pixelSize: Style.font.body
@@ -1483,6 +1497,14 @@ Panel {
               cursorShape: Qt.PointingHandCursor
               onClicked: root.mapsExpanded = !root.mapsExpanded
             }
+          }
+
+          MouseArea {
+            anchors.left: mapsTitle.left
+            anchors.right: mapsTitle.right
+            anchors.verticalCenter: mapsTitle.verticalCenter
+            height: mapsTitle.height + Style.space(8)
+            onClicked: root.mapsExpanded = !root.mapsExpanded
           }
         }
 
