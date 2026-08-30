@@ -115,6 +115,13 @@ Panel {
     return raw - Math.floor(raw)
   }
 
+  function scrollHorizontally(flickable, wheel) {
+    var delta = wheel.pixelDelta.y
+    if (delta === 0) delta = (wheel.angleDelta.y / 120) * Style.space(42)
+    flickable.contentX = Math.max(0, Math.min(flickable.contentWidth - flickable.width, flickable.contentX - delta))
+    wheel.accepted = true
+  }
+
   function radarTile(value, offset) {
     var latitude = parseFloat(radarCoordinate("lat"))
     var longitude = parseFloat(radarCoordinate("lon"))
@@ -1154,6 +1161,10 @@ Panel {
             flickableDirection: Flickable.HorizontalFlick
             interactive: contentWidth > width
 
+            WheelHandler {
+              onWheel: function(wheel) { root.scrollHorizontally(hourlyFlickable, wheel) }
+            }
+
             Row {
               id: hourlyRow
               width: implicitWidth
@@ -1273,7 +1284,12 @@ Panel {
               contentHeight: height
               clip: true
               boundsBehavior: Flickable.StopAtBounds
+              flickableDirection: Flickable.HorizontalFlick
               interactive: contentWidth > width
+
+              WheelHandler {
+                onWheel: function(wheel) { root.scrollHorizontally(activityFlickable, wheel) }
+              }
 
               Row {
                 id: activityRow
