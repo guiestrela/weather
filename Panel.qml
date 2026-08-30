@@ -80,7 +80,9 @@ Panel {
   // Rain radar is always enabled; the base satellite imagery remains visible
   // underneath it without exposing layer-switching controls.
   property string selectedMapLayer: "rain"
-  property int mapZoom: 10
+  // RainViewer's public tile API currently supports zoom levels 0–7.
+  // Keep the base map at the same level so the radar overlay remains valid.
+  property int mapZoom: 7
 
   function radarCoordinate(value) {
     var configured = parseFloat(String(value === "lat" ? configuredLocationState.latitude : configuredLocationState.longitude))
