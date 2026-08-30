@@ -97,12 +97,21 @@ Panel {
     var cached = value === "lat" ? radarLatitude : radarLongitude
     if (cached !== "") return cached
     var field = value === "lat" ? "latitude" : "longitude"
-    return areaInfo && areaInfo[field] && areaInfo[field][0] ? String(areaInfo[field][0].value) : ""
+    if (!areaInfo || areaInfo[field] === undefined || areaInfo[field] === null) return ""
+
+    // wttr.in returns these coordinates as plain strings. Keep accepting the
+    // array/object shape used by some older responses as well.
+    var raw = areaInfo[field]
+    if (Array.isArray(raw)) raw = raw.length > 0 && raw[0] ? raw[0].value : ""
+    else if (typeof raw === "object") raw = raw.value
+    var coordinate = parseFloat(String(raw === undefined || raw === null ? "" : raw))
+    return isNaN(coordinate) ? "" : String(coordinate)
   }
 
   function mapTile(value, offset) {
     var latitude = parseFloat(radarCoordinate("lat"))
     var longitude = parseFloat(radarCoordinate("lon"))
+    if (isNaN(latitude) || isNaN(longitude)) return 0
     var zoom = root.mapZoom
     var scale = Math.pow(2, zoom)
     var tile = value === "x"
@@ -115,6 +124,7 @@ Panel {
   function mapFraction(value) {
     var latitude = parseFloat(radarCoordinate("lat"))
     var longitude = parseFloat(radarCoordinate("lon"))
+    if (isNaN(latitude) || isNaN(longitude)) return 0
     var zoom = root.mapZoom
     var scale = Math.pow(2, zoom)
     var raw = value === "x"
@@ -145,6 +155,7 @@ Panel {
   function radarTile(value, offset) {
     var latitude = parseFloat(radarCoordinate("lat"))
     var longitude = parseFloat(radarCoordinate("lon"))
+    if (isNaN(latitude) || isNaN(longitude)) return 0
     var scale = Math.pow(2, root.radarRenderZoom())
     var tile = value === "x"
       ? Math.floor((longitude + 180) / 360 * scale) + (offset || 0)
@@ -156,6 +167,7 @@ Panel {
   function radarFraction(value) {
     var latitude = parseFloat(radarCoordinate("lat"))
     var longitude = parseFloat(radarCoordinate("lon"))
+    if (isNaN(latitude) || isNaN(longitude)) return 0
     var scale = Math.pow(2, root.radarRenderZoom())
     var raw = value === "x"
       ? (longitude + 180) / 360 * scale
