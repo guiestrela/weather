@@ -851,12 +851,6 @@ Panel {
               hoverEnabled: true
               cursorShape: Qt.PointingHandCursor
               onClicked: root.startEditingLocation()
-
-              PanelToolTip {
-                visible: cityHover.containsMouse
-                text: root.reportLocation === "" ? "Set city (click to configure)" : "City: " + root.reportLocation + " (click to change)"
-                fontFamily: root.bar.fontFamily
-              }
             }
 
             Text {
