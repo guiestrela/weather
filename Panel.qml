@@ -1404,14 +1404,40 @@ Panel {
             }
           }
 
-          Image {
+          // RainViewer's current Weather Maps API exposes radar as regular
+          // map tiles (z/x/y). The former single-image URL based on
+          // latitude/longitude is no longer supported, which left this
+          // layer blank even when the metadata request succeeded.
+          Item {
+            id: radarTiles
             anchors.fill: parent
-            fillMode: Image.PreserveAspectCrop
-            source: root.radarHost + root.radarPath + "/512/5/" + root.radarCoordinate("lat") + "/" + root.radarCoordinate("lon") + "/2/1_1.png"
-            asynchronous: true
-            smooth: false
-            opacity: 1
             visible: root.selectedMapLayer === "rain" && root.radarPath !== ""
+            clip: true
+            z: 1
+
+            Item {
+              anchors.centerIn: parent
+              anchors.horizontalCenterOffset: Style.space(128) - Style.space(256) * root.mapFraction("x")
+              anchors.verticalCenterOffset: Style.space(128) - Style.space(256) * root.mapFraction("y")
+              width: Style.space(768)
+              height: Style.space(768)
+
+              Repeater {
+                model: 9
+
+                Image {
+                  required property int index
+                  x: (index % 3) * Style.space(256)
+                  y: Math.floor(index / 3) * Style.space(256)
+                  width: Style.space(256)
+                  height: Style.space(256)
+                  source: root.radarHost + root.radarPath + "/256/" + root.mapZoom + "/" + root.mapTile("x", -1 + (index % 3)) + "/" + root.mapTile("y", -1 + Math.floor(index / 3)) + "/2/1_1.png"
+                  asynchronous: true
+                  cache: true
+                  smooth: false
+                }
+              }
+            }
           }
 
           // The map mosaic is positioned so the configured location is at
