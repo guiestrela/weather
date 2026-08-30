@@ -101,9 +101,11 @@ Panel {
     var longitude = parseFloat(radarCoordinate("lon"))
     var zoom = root.mapZoom
     var scale = Math.pow(2, zoom)
-    if (value === "x") return Math.floor((longitude + 180) / 360 * scale) + (offset || 0)
-    var latitudeRadians = latitude * Math.PI / 180
-    return Math.floor((1 - Math.asinh(Math.tan(latitudeRadians)) / Math.PI) / 2 * scale) + (offset || 0)
+    var tile = value === "x"
+      ? Math.floor((longitude + 180) / 360 * scale) + (offset || 0)
+      : Math.floor((1 - Math.asinh(Math.tan(latitude * Math.PI / 180)) / Math.PI) / 2 * scale) + (offset || 0)
+    if (value === "x") return ((tile % scale) + scale) % scale
+    return Math.max(0, Math.min(scale - 1, tile))
   }
 
   function mapFraction(value) {
@@ -132,19 +134,25 @@ Panel {
     wheel.accepted = true
   }
 
+  function radarRenderZoom() {
+    return Math.min(root.mapZoom, root.radarZoom)
+  }
+
   function radarTile(value, offset) {
     var latitude = parseFloat(radarCoordinate("lat"))
     var longitude = parseFloat(radarCoordinate("lon"))
-    var scale = Math.pow(2, Math.min(root.mapZoom, root.radarZoom))
-    if (value === "x") return Math.floor((longitude + 180) / 360 * scale) + (offset || 0)
-    var latitudeRadians = latitude * Math.PI / 180
-    return Math.floor((1 - Math.asinh(Math.tan(latitudeRadians)) / Math.PI) / 2 * scale) + (offset || 0)
+    var scale = Math.pow(2, root.radarRenderZoom())
+    var tile = value === "x"
+      ? Math.floor((longitude + 180) / 360 * scale) + (offset || 0)
+      : Math.floor((1 - Math.asinh(Math.tan(latitude * Math.PI / 180)) / Math.PI) / 2 * scale) + (offset || 0)
+    if (value === "x") return ((tile % scale) + scale) % scale
+    return Math.max(0, Math.min(scale - 1, tile))
   }
 
   function radarFraction(value) {
     var latitude = parseFloat(radarCoordinate("lat"))
     var longitude = parseFloat(radarCoordinate("lon"))
-    var scale = Math.pow(2, Math.min(root.mapZoom, root.radarZoom))
+    var scale = Math.pow(2, root.radarRenderZoom())
     var raw = value === "x"
       ? (longitude + 180) / 360 * scale
       : (1 - Math.asinh(Math.tan(latitude * Math.PI / 180)) / Math.PI) / 2 * scale
@@ -1474,7 +1482,7 @@ Panel {
 
             Item {
               anchors.centerIn: parent
-              property real radarScale: Math.pow(2, root.mapZoom - root.radarZoom)
+              property real radarScale: Math.pow(2, root.mapZoom - root.radarRenderZoom())
               anchors.horizontalCenterOffset: Style.space(128) * radarScale - Style.space(256) * radarScale * root.radarFraction("x")
               anchors.verticalCenterOffset: Style.space(128) * radarScale - Style.space(256) * radarScale * root.radarFraction("y")
               width: Style.space(768) * radarScale
@@ -1489,7 +1497,7 @@ Panel {
                   y: Math.floor(index / 3) * Style.space(256) * parent.radarScale
                   width: Style.space(256) * parent.radarScale
                   height: Style.space(256) * parent.radarScale
-                  source: root.radarHost + root.radarPath + "/256/" + root.radarZoom + "/" + root.radarTile("x", -1 + (index % 3)) + "/" + root.radarTile("y", -1 + Math.floor(index / 3)) + "/2/1_1.png"
+                  source: root.radarHost + root.radarPath + "/256/" + root.radarRenderZoom() + "/" + root.radarTile("x", -1 + (index % 3)) + "/" + root.radarTile("y", -1 + Math.floor(index / 3)) + "/2/1_1.png"
                   asynchronous: true
                   cache: true
                   smooth: false
