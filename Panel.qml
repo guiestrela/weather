@@ -353,6 +353,8 @@ Panel {
   readonly property int refreshMinutes: Math.max(1, parseInt(setting("refreshMinutes", 15), 10) || 15)
 
   readonly property string reportLocation:  configuredLocation || wttrLocation || (areaInfo && areaInfo.areaName && areaInfo.areaName[0] ? areaInfo.areaName[0].value : "")
+  // Keep the location control available before the first location response.
+  readonly property string locationDisplay: reportLocation || "Set location"
   readonly property string reportTempNum:   current ? String(useImperial ? current.temp_F : current.temp_C) : ""
   readonly property string tempUnit:        "°" + (useImperial ? "F" : "C")
   readonly property string reportFeels:     current ? formatTemp(useImperial ? current.FeelsLikeF : current.FeelsLikeC) : ""
@@ -838,7 +840,7 @@ Panel {
           spacing: Style.space(12)
 
           Row {
-            visible: !root.editingLocation && root.reportLocation !== ""
+            visible: !root.editingLocation
             spacing: Style.space(6)
 
             MouseArea {
@@ -850,7 +852,7 @@ Panel {
 
               PanelToolTip {
                 visible: cityHover.containsMouse
-                text: "City: " + root.reportLocation + " (click to change)"
+                text: root.reportLocation === "" ? "Set city (click to configure)" : "City: " + root.reportLocation + " (click to change)"
                 fontFamily: root.bar.fontFamily
               }
             }
@@ -864,7 +866,7 @@ Panel {
             }
             Text {
               id: cityName
-              text: (root.reportLocation || "").toUpperCase()
+              text: root.locationDisplay.toUpperCase()
               color: Qt.darker(root.bar.foreground, 1.4)
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.body

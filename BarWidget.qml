@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell.Io
 import qs.Commons
 import qs.Ui
 
@@ -21,6 +22,21 @@ BarWidget {
 
   function togglePanel() {
     if (panelLoader.item && panelLoader.item.toggle) panelLoader.item.toggle()
+  }
+
+  function notifyWeather() {
+    var panel = panelLoader.item
+    if (!panel) return
+
+    var location = panel.reportLocation || "Weather"
+    var temperature = panel.reportTempNum || "—"
+    var unit = panel.tempUnit || ""
+    var wind = panel.reportWind || "—"
+    notificationProc.command = [
+      "omarchy-notification-send",
+      location + "  ·  Temp " + temperature + unit + "  ·  Wind " + wind
+    ]
+    notificationProc.running = true
   }
 
   // Shape contract for shell.summon/hide/toggle routing (Bar.findPanelWidget
@@ -67,6 +83,10 @@ BarWidget {
     }
   }
 
+  Process {
+    id: notificationProc
+  }
+
   BarIconButton {
     id: button
     anchors.fill: parent
@@ -78,7 +98,7 @@ BarWidget {
 
     onPressed: function(b) {
       if (!root.bar) return
-      if (b === Qt.RightButton) root.bar.run("omarchy-notification-send \"$(omarchy-weather-status)\"")
+      if (b === Qt.RightButton) root.notifyWeather()
       else if (b === Qt.MiddleButton) root.refresh()
       else root.togglePanel()
     }
