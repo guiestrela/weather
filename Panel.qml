@@ -83,6 +83,8 @@ Panel {
   // Keep the detailed base map zoom. RainViewer has a lower native maximum,
   // so its tiles are rendered at radarZoom and scaled to this map's zoom.
   property int mapZoom: 10
+  property int mapMinZoom: 3
+  property int mapMaxZoom: 10
   property int radarZoom: 7
 
   function radarCoordinate(value) {
@@ -123,10 +125,17 @@ Panel {
     wheel.accepted = true
   }
 
+  function zoomMap(wheel) {
+    var delta = wheel.angleDelta.y !== 0 ? wheel.angleDelta.y : wheel.pixelDelta.y
+    if (delta === 0) return
+    root.mapZoom = Math.max(root.mapMinZoom, Math.min(root.mapMaxZoom, root.mapZoom + (delta > 0 ? 1 : -1)))
+    wheel.accepted = true
+  }
+
   function radarTile(value, offset) {
     var latitude = parseFloat(radarCoordinate("lat"))
     var longitude = parseFloat(radarCoordinate("lon"))
-    var scale = Math.pow(2, root.radarZoom)
+    var scale = Math.pow(2, Math.min(root.mapZoom, root.radarZoom))
     if (value === "x") return Math.floor((longitude + 180) / 360 * scale) + (offset || 0)
     var latitudeRadians = latitude * Math.PI / 180
     return Math.floor((1 - Math.asinh(Math.tan(latitudeRadians)) / Math.PI) / 2 * scale) + (offset || 0)
@@ -135,7 +144,7 @@ Panel {
   function radarFraction(value) {
     var latitude = parseFloat(radarCoordinate("lat"))
     var longitude = parseFloat(radarCoordinate("lon"))
-    var scale = Math.pow(2, root.radarZoom)
+    var scale = Math.pow(2, Math.min(root.mapZoom, root.radarZoom))
     var raw = value === "x"
       ? (longitude + 180) / 360 * scale
       : (1 - Math.asinh(Math.tan(latitude * Math.PI / 180)) / Math.PI) / 2 * scale
@@ -908,6 +917,7 @@ Panel {
             }
           }
         }
+
       }
 
       // ---- Geocoding suggestions while the location is being edited.
@@ -1513,6 +1523,15 @@ Panel {
             font.family: root.bar.fontFamily
             font.pixelSize: Style.font.caption
             opacity: 0.8
+          }
+
+          // Capture only wheel events so the map can zoom without interfering
+          // with the rest of the panel.
+          MouseArea {
+            anchors.fill: parent
+            z: 3
+            acceptedButtons: Qt.NoButton
+            onWheel: function(wheel) { root.zoomMap(wheel) }
           }
         }
 
