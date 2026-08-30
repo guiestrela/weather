@@ -281,6 +281,9 @@ Panel {
   // editor remains open with a spinner, so stale data is never presented
   // under the newly configured location label.
   onLocationQueryChanged: {
+    // QML cannot reliably track coordinates read inside the map helper
+    // functions. Force every map layer to rebuild for the new location.
+    mapRevision++
     if (savingLocation) savingLocationQueryStarted = true
     forecastRetries = 0
     dailyForecastRetries = 0
@@ -1676,8 +1679,8 @@ Panel {
             Item {
               anchors.centerIn: parent
               property real radarScale: Math.pow(2, root.mapZoom - root.radarRenderZoom())
-              anchors.horizontalCenterOffset: Style.space(128) * radarScale - Style.space(256) * radarScale * root.radarFraction("x")
-              anchors.verticalCenterOffset: Style.space(128) * radarScale - Style.space(256) * radarScale * root.radarFraction("y")
+              anchors.horizontalCenterOffset: Style.space(128) * radarScale - Style.space(256) * radarScale * root.radarFraction("x", root.mapRevision)
+              anchors.verticalCenterOffset: Style.space(128) * radarScale - Style.space(256) * radarScale * root.radarFraction("y", root.mapRevision)
               width: Style.space(768) * radarScale
               height: Style.space(768) * radarScale
 
@@ -1690,7 +1693,10 @@ Panel {
                   y: Math.floor(index / 3) * Style.space(256) * parent.radarScale
                   width: Style.space(256) * parent.radarScale
                   height: Style.space(256) * parent.radarScale
-                  source: root.radarHost + root.radarPath + "/256/" + root.radarRenderZoom() + "/" + root.radarTile("x", -1 + (index % 3)) + "/" + root.radarTile("y", -1 + Math.floor(index / 3)) + "/2/1_1.png"
+                  source: {
+                    var revision = root.mapRevision
+                    return root.radarHost + root.radarPath + "/256/" + root.radarRenderZoom() + "/" + root.radarTile("x", -1 + (index % 3)) + "/" + root.radarTile("y", -1 + Math.floor(index / 3)) + "/2/1_1.png"
+                  }
                   asynchronous: true
                   cache: true
                   smooth: false
