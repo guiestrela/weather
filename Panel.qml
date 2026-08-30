@@ -845,7 +845,8 @@ Panel {
 
             MouseArea {
               id: cityHover
-              anchors.fill: cityName
+              width: cityName.width
+              height: cityName.height
               hoverEnabled: true
               cursorShape: Qt.PointingHandCursor
               onClicked: root.startEditingLocation()
@@ -862,7 +863,6 @@ Panel {
               color: Qt.darker(root.bar.foreground, 1.4)
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.body
-              anchors.verticalCenter: parent.verticalCenter
             }
             Text {
               id: cityName
@@ -871,7 +871,6 @@ Panel {
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.body
               font.letterSpacing: 1
-              anchors.verticalCenter: parent.verticalCenter
             }
 
           }
