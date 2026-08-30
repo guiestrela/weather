@@ -794,6 +794,10 @@ Panel {
             anchors.verticalCenter: parent.verticalCenter
             spacing: Style.space(2)
 
+            HoverHandler {
+              id: tempHover
+            }
+
             Text {
               id: tempBig
               text: root.reportTempNum || "—"
@@ -811,6 +815,12 @@ Panel {
               font.pixelSize: Style.font.display
               anchors.top: tempBig.top
               anchors.topMargin: Style.space(10)
+            }
+
+            PanelToolTip {
+              visible: tempHover.hovered
+              text: "Temperature: " + (root.reportTempNum || "—") + root.tempUnit
+              fontFamily: root.bar.fontFamily
             }
           }
         }
@@ -831,6 +841,7 @@ Panel {
               onTapped: root.startEditingLocation()
             }
             HoverHandler {
+              id: cityHover
               cursorShape: Qt.PointingHandCursor
             }
 
@@ -848,6 +859,12 @@ Panel {
               font.pixelSize: Style.font.body
               font.letterSpacing: 1
               anchors.verticalCenter: parent.verticalCenter
+            }
+
+            PanelToolTip {
+              visible: cityHover.hovered
+              text: "City: " + root.reportLocation + " (click to change)"
+              fontFamily: root.bar.fontFamily
             }
           }
 
@@ -941,6 +958,9 @@ Panel {
 
             Column {
               spacing: Style.space(5)
+              HoverHandler {
+                id: windHover
+              }
               Text {
                 text: "WIND"
                 color: Qt.darker(root.bar.foreground, 1.5)
@@ -954,10 +974,19 @@ Panel {
                 font.family: root.bar.fontFamily
                 font.pixelSize: Style.font.title
               }
+
+              PanelToolTip {
+                visible: windHover.hovered
+                text: "Wind: " + root.reportWind
+                fontFamily: root.bar.fontFamily
+              }
             }
 
             Column {
               spacing: Style.space(5)
+              HoverHandler {
+                id: humidityHover
+              }
               Text {
                 text: "HUMID"
                 color: Qt.darker(root.bar.foreground, 1.5)
@@ -970,6 +999,11 @@ Panel {
                 color: root.bar.foreground
                 font.family: root.bar.fontFamily
                 font.pixelSize: Style.font.title
+              }
+              PanelToolTip {
+                visible: humidityHover.hovered
+                text: "Humidity: " + root.reportHumidity
+                fontFamily: root.bar.fontFamily
               }
             }
           }
