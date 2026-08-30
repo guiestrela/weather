@@ -833,7 +833,9 @@ Panel {
 
         Column {
           id: heroRight
-          width: Math.max(weatherStats.implicitWidth, Style.space(150))
+          // The edit row contains a 190px field, spacing, and a clear button.
+          // Reserve enough width for all of it so it cannot escape the panel.
+          width: Math.max(weatherStats.implicitWidth, root.editingLocation ? Style.space(230) : Style.space(150))
           anchors.right: parent.right
           anchors.rightMargin: Style.space(70)
           anchors.top: parent.top
@@ -844,28 +846,34 @@ Panel {
             visible: !root.editingLocation
             spacing: Style.space(6)
 
-            MouseArea {
-              id: cityHover
-              width: cityName.width
-              height: cityName.height
-              hoverEnabled: true
-              cursorShape: Qt.PointingHandCursor
-              onClicked: root.startEditingLocation()
-            }
-
             Text {
               text: ""  // nf-fa-map_marker
               color: Qt.darker(root.bar.foreground, 1.4)
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.body
             }
-            Text {
-              id: cityName
-              text: root.locationDisplay.toUpperCase()
-              color: Qt.darker(root.bar.foreground, 1.4)
-              font.family: root.bar.fontFamily
-              font.pixelSize: Style.font.body
-              font.letterSpacing: 1
+
+            Item {
+              width: cityName.implicitWidth
+              height: cityName.implicitHeight
+
+              Text {
+                id: cityName
+                anchors.fill: parent
+                text: root.locationDisplay.toUpperCase()
+                color: Qt.darker(root.bar.foreground, 1.4)
+                font.family: root.bar.fontFamily
+                font.pixelSize: Style.font.body
+                font.letterSpacing: 1
+              }
+
+              MouseArea {
+                id: cityHover
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: root.startEditingLocation()
+              }
             }
 
           }
