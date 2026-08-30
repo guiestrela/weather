@@ -116,9 +116,10 @@ Panel {
   }
 
   function scrollHorizontally(flickable, wheel) {
-    var delta = wheel.pixelDelta.y
-    if (delta === 0) delta = (wheel.angleDelta.y / 120) * Style.space(42)
-    flickable.contentX = Math.max(0, Math.min(flickable.contentWidth - flickable.width, flickable.contentX - delta))
+    var delta = wheel.pixelDelta.y !== 0 ? wheel.pixelDelta.y : wheel.pixelDelta.x
+    if (delta === 0) delta = wheel.angleDelta.y !== 0 ? wheel.angleDelta.y : wheel.angleDelta.x
+    delta = (delta / 120) * Style.space(96)
+    flickable.contentX = Math.max(0, Math.min(Math.max(0, flickable.contentWidth - flickable.width), flickable.contentX - delta))
     wheel.accepted = true
   }
 
@@ -1154,7 +1155,7 @@ Panel {
             id: hourlyFlickable
             width: parent.width
             height: hourlyRow.height
-            contentWidth: hourlyRow.implicitWidth
+            contentWidth: Math.max(width, hourlyRow.implicitWidth)
             contentHeight: height
             clip: true
             boundsBehavior: Flickable.StopAtBounds
@@ -1165,6 +1166,7 @@ Panel {
             // over the Flickable's normal click-and-drag interaction.
             MouseArea {
               anchors.fill: parent
+              z: 1
               acceptedButtons: Qt.NoButton
               onWheel: function(wheel) { root.scrollHorizontally(hourlyFlickable, wheel) }
             }
@@ -1284,7 +1286,7 @@ Panel {
               id: activityFlickable
               width: parent.width
               height: activityRow.height
-              contentWidth: activityRow.width
+              contentWidth: Math.max(width, activityRow.width)
               contentHeight: height
               clip: true
               boundsBehavior: Flickable.StopAtBounds
@@ -1293,6 +1295,7 @@ Panel {
 
               MouseArea {
                 anchors.fill: parent
+                z: 1
                 acceptedButtons: Qt.NoButton
                 onWheel: function(wheel) { root.scrollHorizontally(activityFlickable, wheel) }
               }
