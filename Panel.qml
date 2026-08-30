@@ -86,6 +86,8 @@ Panel {
   property int mapMinZoom: 3
   property int mapMaxZoom: 10
   property int radarZoom: 7
+  property bool activitiesExpanded: true
+  property bool mapsExpanded: true
   // QML does not always track dependencies read indirectly from JavaScript
   // functions. Bump this when a new auto-detected report supplies map
   // coordinates so tile URL bindings are evaluated again.
@@ -1305,15 +1307,40 @@ Panel {
           width: parent.width
           spacing: Style.space(8)
 
-          Text {
-            text: "ACTIVITY FORECASTS"
-            color: Qt.darker(root.bar.foreground, 1.4)
-            font.family: root.bar.fontFamily
-            font.pixelSize: Style.font.caption
-            font.letterSpacing: 1
+          Row {
+            width: parent.width
+            height: Style.space(18)
+
+            Text {
+              id: activityTitle
+              text: "ACTIVITY FORECASTS"
+              color: Qt.darker(root.bar.foreground, 1.4)
+              font.family: root.bar.fontFamily
+              font.pixelSize: Style.font.caption
+              font.letterSpacing: 1
+            }
+
+            Item { width: Math.max(0, parent.width - activityTitle.implicitWidth - activityToggle.width); height: 1 }
+
+            Text {
+              id: activityToggle
+              width: Style.space(24)
+              text: root.activitiesExpanded ? "▾" : "▸"
+              color: root.bar.foreground
+              font.family: root.bar.fontFamily
+              font.pixelSize: Style.font.body
+              horizontalAlignment: Text.AlignRight
+
+              MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: root.activitiesExpanded = !root.activitiesExpanded
+              }
+            }
           }
 
           Item {
+            visible: root.activitiesExpanded
             width: parent.width
             height: activityFlickable.height + Style.space(14)
 
@@ -1426,16 +1453,41 @@ Panel {
         width: parent.width
         spacing: Style.space(8)
 
-        Text {
-          text: "RADAR AND MAPS"
-          color: Qt.darker(root.bar.foreground, 1.4)
-          font.family: root.bar.fontFamily
-          font.pixelSize: Style.font.body
-          font.bold: true
-          font.letterSpacing: 1
+        Row {
+          width: parent.width
+          height: Style.space(20)
+
+          Text {
+            id: mapsTitle
+            text: "RADAR AND MAPS"
+            color: Qt.darker(root.bar.foreground, 1.4)
+            font.family: root.bar.fontFamily
+            font.pixelSize: Style.font.body
+            font.bold: true
+            font.letterSpacing: 1
+          }
+
+          Item { width: Math.max(0, parent.width - mapsToggle.width - mapsTitle.implicitWidth); height: 1 }
+
+          Text {
+            id: mapsToggle
+            width: Style.space(24)
+            text: root.mapsExpanded ? "▾" : "▸"
+            color: root.bar.foreground
+            font.family: root.bar.fontFamily
+            font.pixelSize: Style.font.body
+            horizontalAlignment: Text.AlignRight
+
+            MouseArea {
+              anchors.fill: parent
+              cursorShape: Qt.PointingHandCursor
+              onClicked: root.mapsExpanded = !root.mapsExpanded
+            }
+          }
         }
 
         Rectangle {
+          visible: root.mapsExpanded
           width: parent.width
           height: Style.space(260)
           radius: 0
