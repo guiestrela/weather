@@ -1161,7 +1161,11 @@ Panel {
             flickableDirection: Flickable.HorizontalFlick
             interactive: contentWidth > width
 
-            WheelHandler {
+            // A button-less MouseArea receives wheel events without taking
+            // over the Flickable's normal click-and-drag interaction.
+            MouseArea {
+              anchors.fill: parent
+              acceptedButtons: Qt.NoButton
               onWheel: function(wheel) { root.scrollHorizontally(hourlyFlickable, wheel) }
             }
 
@@ -1287,7 +1291,9 @@ Panel {
               flickableDirection: Flickable.HorizontalFlick
               interactive: contentWidth > width
 
-              WheelHandler {
+              MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.NoButton
                 onWheel: function(wheel) { root.scrollHorizontally(activityFlickable, wheel) }
               }
 
