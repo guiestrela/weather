@@ -97,7 +97,8 @@ This file is managed by the `omarchy-weather-location` command.
 - Added hiking, cycling, running, and camping recommendations based on rain, wind, temperature, and storm conditions.
 - Added a live RainViewer radar section below the activity forecasts.
 - Kept the radar layer permanently enabled without layer-switching buttons.
-- Set the map zoom to RainViewer's current public API maximum (level 7).
+- Kept the detailed map zoom at level 10 while scaling RainViewer's level-7
+  radar tiles to fit the map.
 - Added separate data normalization for today and future forecast days.
 - Reorganized the forecast into an aligned daily list with day/night symbols.
 

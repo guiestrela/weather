@@ -80,9 +80,10 @@ Panel {
   // Rain radar is always enabled; the base satellite imagery remains visible
   // underneath it without exposing layer-switching controls.
   property string selectedMapLayer: "rain"
-  // RainViewer's public tile API currently supports zoom levels 0–7.
-  // Keep the base map at the same level so the radar overlay remains valid.
-  property int mapZoom: 7
+  // Keep the detailed base map zoom. RainViewer has a lower native maximum,
+  // so its tiles are rendered at radarZoom and scaled to this map's zoom.
+  property int mapZoom: 10
+  property int radarZoom: 7
 
   function radarCoordinate(value) {
     var configured = parseFloat(String(value === "lat" ? configuredLocationState.latitude : configuredLocationState.longitude))
@@ -108,6 +109,25 @@ Panel {
     var longitude = parseFloat(radarCoordinate("lon"))
     var zoom = root.mapZoom
     var scale = Math.pow(2, zoom)
+    var raw = value === "x"
+      ? (longitude + 180) / 360 * scale
+      : (1 - Math.asinh(Math.tan(latitude * Math.PI / 180)) / Math.PI) / 2 * scale
+    return raw - Math.floor(raw)
+  }
+
+  function radarTile(value, offset) {
+    var latitude = parseFloat(radarCoordinate("lat"))
+    var longitude = parseFloat(radarCoordinate("lon"))
+    var scale = Math.pow(2, root.radarZoom)
+    if (value === "x") return Math.floor((longitude + 180) / 360 * scale) + (offset || 0)
+    var latitudeRadians = latitude * Math.PI / 180
+    return Math.floor((1 - Math.asinh(Math.tan(latitudeRadians)) / Math.PI) / 2 * scale) + (offset || 0)
+  }
+
+  function radarFraction(value) {
+    var latitude = parseFloat(radarCoordinate("lat"))
+    var longitude = parseFloat(radarCoordinate("lon"))
+    var scale = Math.pow(2, root.radarZoom)
     var raw = value === "x"
       ? (longitude + 180) / 360 * scale
       : (1 - Math.asinh(Math.tan(latitude * Math.PI / 180)) / Math.PI) / 2 * scale
@@ -1419,21 +1439,22 @@ Panel {
 
             Item {
               anchors.centerIn: parent
-              anchors.horizontalCenterOffset: Style.space(128) - Style.space(256) * root.mapFraction("x")
-              anchors.verticalCenterOffset: Style.space(128) - Style.space(256) * root.mapFraction("y")
-              width: Style.space(768)
-              height: Style.space(768)
+              property real radarScale: Math.pow(2, root.mapZoom - root.radarZoom)
+              anchors.horizontalCenterOffset: Style.space(128) * radarScale - Style.space(256) * radarScale * root.radarFraction("x")
+              anchors.verticalCenterOffset: Style.space(128) * radarScale - Style.space(256) * radarScale * root.radarFraction("y")
+              width: Style.space(768) * radarScale
+              height: Style.space(768) * radarScale
 
               Repeater {
                 model: 9
 
                 Image {
                   required property int index
-                  x: (index % 3) * Style.space(256)
-                  y: Math.floor(index / 3) * Style.space(256)
-                  width: Style.space(256)
-                  height: Style.space(256)
-                  source: root.radarHost + root.radarPath + "/256/" + root.mapZoom + "/" + root.mapTile("x", -1 + (index % 3)) + "/" + root.mapTile("y", -1 + Math.floor(index / 3)) + "/2/1_1.png"
+                  x: (index % 3) * Style.space(256) * parent.radarScale
+                  y: Math.floor(index / 3) * Style.space(256) * parent.radarScale
+                  width: Style.space(256) * parent.radarScale
+                  height: Style.space(256) * parent.radarScale
+                  source: root.radarHost + root.radarPath + "/256/" + root.radarZoom + "/" + root.radarTile("x", -1 + (index % 3)) + "/" + root.radarTile("y", -1 + Math.floor(index / 3)) + "/2/1_1.png"
                   asynchronous: true
                   cache: true
                   smooth: false
