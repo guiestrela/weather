@@ -130,6 +130,15 @@ Panel {
     }) + "\n")
   }
 
+  // Tile Images keep evaluating their source binding while the section is
+  // hidden, so the URL builders need the same guard the visibility uses.
+  // Reading mapRevision here keeps the indirect coordinate reads observable,
+  // exactly as the source bindings below do.
+  readonly property bool hasRadarCoordinates: {
+    var revision = mapRevision
+    return radarCoordinate("lat") !== "" && radarCoordinate("lon") !== ""
+  }
+
   function mapTile(value, offset) {
     var latitude = parseFloat(radarCoordinate("lat"))
     var longitude = parseFloat(radarCoordinate("lon"))
@@ -1536,7 +1545,7 @@ Panel {
         }
 
       Rectangle {
-        visible: root.radarCoordinate("lat") !== "" && root.radarCoordinate("lon") !== ""
+        visible: root.hasRadarCoordinates
         width: parent.width
         height: Style.spacing.hairline
         color: root.bar.foreground
@@ -1544,7 +1553,7 @@ Panel {
       }
 
       Column {
-        visible: root.radarCoordinate("lat") !== "" && root.radarCoordinate("lon") !== ""
+        visible: root.hasRadarCoordinates
         width: parent.width
         spacing: Style.space(8)
 
@@ -1629,6 +1638,7 @@ Panel {
                   // coordinates through areaInfo, which QML cannot reliably
                   // observe when the read is indirect.
                   var revision = root.mapRevision
+                  if (!root.hasRadarCoordinates) return ""
                   return "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/" + root.mapZoom + "/" + root.mapTile("y", -1 + Math.floor(index / 3)) + "/" + root.mapTile("x", -1 + (index % 3))
                 }
                 asynchronous: true
@@ -1650,6 +1660,7 @@ Panel {
                 height: Style.space(256)
                 source: {
                   var revision = root.mapRevision
+                  if (!root.hasRadarCoordinates) return ""
                   return "https://a.basemaps.cartocdn.com/light_only_labels/" + root.mapZoom + "/" + root.mapTile("x", -1 + (index % 3)) + "/" + root.mapTile("y", -1 + Math.floor(index / 3)) + ".png"
                 }
                 asynchronous: true
@@ -1689,6 +1700,7 @@ Panel {
                   height: Style.space(256) * parent.radarScale
                   source: {
                     var revision = root.mapRevision
+                    if (!root.hasRadarCoordinates || root.radarPath === "") return ""
                     return root.radarHost + root.radarPath + "/256/" + root.radarRenderZoom() + "/" + root.radarTile("x", -1 + (index % 3)) + "/" + root.radarTile("y", -1 + Math.floor(index / 3)) + "/2/1_1.png"
                   }
                   asynchronous: true
@@ -1711,7 +1723,7 @@ Panel {
             border.width: Style.space(2)
             border.color: root.bar.foreground
             z: 2
-            visible: root.radarCoordinate("lat") !== "" && root.radarCoordinate("lon") !== ""
+            visible: root.hasRadarCoordinates
           }
 
           Text {
