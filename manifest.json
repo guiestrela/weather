@@ -16,6 +16,38 @@
     "description": "Weather pill with detail popup",
     "category": "Info",
     "allowMultiple": false,
-    "settingsForm": "weatherSettings"
+    "settingsForm": "weatherSettings",
+    "defaults": {
+      "unit": "metric",
+      "refreshMinutes": 15
+    },
+    "schema": [
+      {
+        "key": "unit",
+        "type": "enum",
+        "label": "Temperature unit",
+        "options": [
+          {
+            "value": "metric",
+            "label": "Celsius (°C)"
+          },
+          {
+            "value": "imperial",
+            "label": "Fahrenheit (°F)"
+          }
+        ],
+        "defaultValue": "metric",
+        "description": "Choose Celsius (°C) or Fahrenheit (°F)."
+      },
+      {
+        "key": "refreshMinutes",
+        "type": "integer",
+        "label": "Refresh interval (minutes)",
+        "min": 1,
+        "max": 120,
+        "step": 1,
+        "defaultValue": 15
+      }
+    ]
   }
 }
