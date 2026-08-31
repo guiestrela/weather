@@ -1,6 +1,15 @@
 # Omarchy Weather
 
-Weather plugin for Omarchy, displayed as a widget in the top bar.
+Omarchy Weather is a Quickshell widget for the Omarchy top bar. It requires
+Omarchy, Quickshell, and `curl`.
+
+The plugin combines public data from [Open-Meteo](https://open-meteo.com/),
+[wttr.in](https://wttr.in/), [RainViewer](https://www.rainviewer.com/),
+[Esri World Imagery](https://www.arcgis.com/home/item.html?id=10df2279f9684e4a9f6a7f08febac1a8),
+and [CARTO](https://carto.com/basemaps/) to provide weather forecasts, current
+conditions, radar, satellite imagery, and map tiles. No account, API key, or
+special permissions are required. Installation, configuration, and removal
+instructions are provided below.
 
 ## Preview
 
