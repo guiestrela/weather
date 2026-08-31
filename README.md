@@ -72,6 +72,22 @@ Settings are read through the Omarchy module system. Available options include:
 - `unit`: `metric` or `imperial`.
 - `refreshMinutes`: refresh interval in minutes.
 
+To choose the temperature unit from the terminal:
+
+```bash
+# Celsius
+omarchy bar set io.github.guiestrela.weather unit metric
+
+# Fahrenheit
+omarchy bar set io.github.guiestrela.weather unit imperial
+```
+
+Restart the shell after changing the setting:
+
+```bash
+omarchy restart shell
+```
+
 The selected location is stored at:
 
 ```text
