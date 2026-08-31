@@ -207,19 +207,13 @@ Panel {
 
   Process {
     id: radarGeocodeProc
-    command: ["curl", "-fsS", "--max-time", "5", "https://geocoding-api.open-meteo.com/v1/search?name=" + encodeURIComponent(root.configuredLocation) + "&count=10&countryCode=BR&language=en&format=json"]
+    command: ["curl", "-fsS", "--max-time", "5", "https://geocoding-api.open-meteo.com/v1/search?name=" + encodeURIComponent(root.configuredLocation) + "&count=10&language=en&format=json"]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
         try {
           var results = JSON.parse(String(text || "")).results || []
           var selected = results.length > 0 ? results[0] : null
-          for (var i = 0; i < results.length; i++) {
-            if (String(results[i].country_code || "").toUpperCase() === "BR") {
-              selected = results[i]
-              break
-            }
-          }
           if (selected) {
             root.radarLatitude = String(selected.latitude)
             root.radarLongitude = String(selected.longitude)
