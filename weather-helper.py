@@ -25,10 +25,17 @@ def state_dir():
     for part in path.relative_to(home).parts:
         current = current / part
         info = os.lstat(current) if current.exists() or current.is_symlink() else None
-        if info and not pathlib.Path(current).is_dir() or info and pathlib.Path(current).is_symlink():
+        if info and (pathlib.Path(current).is_symlink() or not pathlib.Path(current).is_dir()):
             raise OSError("state path is not a directory")
         if info and info.st_uid != os.getuid():
             raise OSError("state directory is not owned by the user")
+    if path.exists() or path.is_symlink():
+        if path.is_symlink() or not path.is_dir():
+            raise OSError("state path is not a directory")
+        if os.stat(path).st_uid != os.getuid():
+            raise OSError("state directory is not owned by the user")
+        if os.stat(path).st_mode & 0o077:
+            os.chmod(path, 0o700)
     return path
 
 
@@ -40,6 +47,17 @@ def state_path(name):
     if path.is_symlink():
         raise OSError("state file is a symlink")
     return path
+
+
+def validate_target(path):
+    try:
+        info = os.lstat(path)
+    except FileNotFoundError:
+        return
+    if not stat_is_regular(info.st_mode) or info.st_uid != os.getuid():
+        raise OSError("unsafe state target")
+    if info.st_size > MAX_STATE:
+        raise OSError("state target is too large")
 
 
 def read_state(name):
@@ -73,30 +91,32 @@ def write_state(name, data):
         raise OSError("state data is too large")
     path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
     os.chmod(path.parent, 0o700)
-    fd, temporary = tempfile.mkstemp(prefix="." + name + ".", dir=path.parent)
+    validate_target(path)
+    directory_fd = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC)
+    fd = -1
+    temporary = None
     try:
+        fd, temporary = tempfile.mkstemp(prefix="." + name + ".", dir=path.parent)
         os.fchmod(fd, 0o600)
         offset = 0
         while offset < len(data):
             offset += os.write(fd, data[offset:])
         os.fsync(fd)
+        os.replace(temporary, name, dst_dir_fd=directory_fd)
+        os.fchmod(fd, 0o600)
         os.close(fd)
-        os.replace(temporary, path)
-        os.chmod(path, 0o600)
-        directory_fd = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC)
-        try:
-            os.fsync(directory_fd)
-        finally:
-            os.close(directory_fd)
+        os.fsync(directory_fd)
     finally:
         try:
             os.close(fd)
         except OSError:
             pass
-        try:
-            os.unlink(temporary)
-        except FileNotFoundError:
-            pass
+        if temporary:
+            try:
+                os.unlink(temporary)
+            except FileNotFoundError:
+                pass
+        os.close(directory_fd)
 
 
 def fetch(url, timeout, limit):

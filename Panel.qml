@@ -461,6 +461,7 @@ Panel {
   }
 
   function clearLocation() {
+    configuredLocationState = { name: "", latitude: null, longitude: null }
     persistLocation("", null, null)
     wttrLocation = ""
     cancelEditingLocation()
