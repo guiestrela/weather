@@ -53,10 +53,14 @@ def read_state(name):
     fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
     try:
         info = os.fstat(fd)
-        if not pathlib.Path(path).is_file() or not stat_is_regular(info.st_mode) or info.st_uid != os.getuid() or info.st_mode & 0o077:
+        if not stat_is_regular(info.st_mode) or info.st_uid != os.getuid():
             raise OSError("unsafe state file")
         if info.st_size > MAX_STATE:
             raise OSError("state file is too large")
+        # A user-owned regular file is safe to read; repair legacy weaker
+        # permissions before exposing its contents to the shell.
+        if info.st_mode & 0o077:
+            os.fchmod(fd, 0o600)
         data = os.read(fd, MAX_STATE + 1)
     finally:
         os.close(fd)
