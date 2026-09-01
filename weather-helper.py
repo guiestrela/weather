@@ -29,8 +29,6 @@ def state_dir():
             raise OSError("state path is not a directory")
         if info and info.st_uid != os.getuid():
             raise OSError("state directory is not owned by the user")
-    path.mkdir(mode=0o700, parents=True, exist_ok=True)
-    os.chmod(path, 0o700)
     return path
 
 
@@ -57,10 +55,6 @@ def read_state(name):
             raise OSError("unsafe state file")
         if info.st_size > MAX_STATE:
             raise OSError("state file is too large")
-        # A user-owned regular file is safe to read; repair legacy weaker
-        # permissions before exposing its contents to the shell.
-        if info.st_mode & 0o077:
-            os.fchmod(fd, 0o600)
         data = os.read(fd, MAX_STATE + 1)
     finally:
         os.close(fd)
@@ -77,6 +71,8 @@ def write_state(name, data):
     path = state_path(name)
     if len(data) > MAX_STATE:
         raise OSError("state data is too large")
+    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    os.chmod(path.parent, 0o700)
     fd, temporary = tempfile.mkstemp(prefix="." + name + ".", dir=path.parent)
     try:
         os.fchmod(fd, 0o600)
