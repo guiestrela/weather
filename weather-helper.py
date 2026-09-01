@@ -74,6 +74,8 @@ def state_dir():
             os.close(current_fd)
             current_fd = next_fd
         _check_directory(current_fd, "home directory")
+        # Shared ancestors are validation-only; only the plugin-owned leaf
+        # receives private permissions.
         for part in (".local", "state", "omarchy", "settings"):
             next_fd = _open_directory(
                 current_fd,
