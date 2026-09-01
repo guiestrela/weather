@@ -89,7 +89,7 @@ Panel {
   property bool activitiesExpanded: true
   property bool mapsExpanded: true
   // shellDir is the Omarchy shell root, not this plugin's directory.
-  readonly property string helperPath: Qt.resolvedUrl("weather-helper.py").replace(/^file:\/\//, "")
+  readonly property string helperPath: String(Qt.resolvedUrl("weather-helper.py")).replace(/^file:\/\//, "")
   readonly property string pythonPath: "/usr/bin/python3"
   // QML does not always track dependencies read indirectly from JavaScript
   // functions. Bump this when a new auto-detected report supplies map
