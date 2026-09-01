@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "io.github.guiestrela.weather",
-  "name": "Weather",
+  "name": "Better Weather",
   "version": "1.0.0",
   "author": "Guiestrela",
   "description": "Weather pill with detail popup",
@@ -12,7 +12,7 @@
     "barWidget": "BarWidget.qml"
   },
   "barWidget": {
-    "displayName": "Weather",
+    "displayName": "Better Weather",
     "description": "Weather pill with detail popup",
     "category": "Info",
     "allowMultiple": false,

@@ -1,6 +1,6 @@
-# Omarchy Weather
+# Omarchy Better Weather 
 
-Omarchy Weather is a Quickshell widget for the Omarchy top bar. It requires
+Omarchy Better Weather is a Quickshell widget for the Omarchy top bar. It requires
 Omarchy, Quickshell, and `curl`.
 
 The plugin combines public data from [Open-Meteo](https://open-meteo.com/),
@@ -15,15 +15,15 @@ instructions are provided below.
 
 ### Metric units
 
-![Omarchy Weather panel showing metric units, forecast, activity recommendations, and radar map](preview.png)
+![Omarchy Better Weather panel showing metric units, forecast, activity recommendations, and radar map](preview.png)
 
 ### Imperial units
 
-![Omarchy Weather panel showing imperial units, forecast, activity recommendations, and radar map](preview2.png)
+![Omarchy Better Weather panel showing imperial units, forecast, activity recommendations, and radar map](preview2.png)
 
 ### Detailed panel view
 
-![Omarchy Weather panel showing the detailed forecast, activity recommendations, and radar map](preview3.png)
+![Omarchy Better Weather panel showing the detailed forecast, activity recommendations, and radar map](preview3.png)
 
 ## Features
 
