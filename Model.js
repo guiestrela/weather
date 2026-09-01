@@ -1,3 +1,11 @@
+var MAX_TEXT = 128
+var MAX_RESULTS = 10
+var MAX_HOURLY = 48
+
+function boundedText(value, limit) {
+  return String(value === undefined || value === null ? "" : value).slice(0, limit || MAX_TEXT)
+}
+
 // weather.json holds {"name": ..., "latitude": ..., "longitude": ...} (see
 // omarchy-weather-location, which owns the format). Missing, blank, or
 // unparseable means the location is auto-detected from the IP address.
@@ -11,7 +19,7 @@ function parseLocationFile(raw) {
     var longitude = parseFloat(data.longitude)
     var hasCoordinates = !isNaN(latitude) && !isNaN(longitude)
     return {
-      name: typeof data.name === "string" ? data.name.replace(/^\s+|\s+$/g, "") : "",
+      name: typeof data.name === "string" ? boundedText(data.name).replace(/^\s+|\s+$/g, "") : "",
       latitude: hasCoordinates ? latitude : null,
       longitude: hasCoordinates ? longitude : null
     }
@@ -62,13 +70,13 @@ function parseGeocodingResults(raw) {
     if (!results || !results.length) return []
 
     var out = []
-    for (var i = 0; i < results.length; i++) {
+    for (var i = 0; i < results.length && out.length < MAX_RESULTS; i++) {
       var r = results[i]
       if (!r || !r.name || r.latitude === undefined || r.longitude === undefined) continue
       var region = [r.admin1, r.country].filter(function(part) { return !!part }).join(", ")
       out.push({
-        name: String(r.name),
-        description: region,
+        name: boundedText(r.name),
+        description: boundedText(region),
         latitude: r.latitude,
         longitude: r.longitude
       })
@@ -272,7 +280,7 @@ function openMeteoTodayForecast(dailyForecastReport, todayString) {
   var daily = dailyForecastReport && dailyForecastReport.daily ? dailyForecastReport.daily : null
   if (!daily || !daily.time) return null
 
-  for (var i = 0; i < daily.time.length; ++i) {
+  for (var i = 0; i < daily.time.length && i < MAX_RESULTS; ++i) {
     if (String(daily.time[i]).slice(0, 10) !== String(todayString || "")) continue
     var maxC = daily.temperature_2m_max ? daily.temperature_2m_max[i] : ""
     var minC = daily.temperature_2m_min ? daily.temperature_2m_min[i] : ""
@@ -291,7 +299,7 @@ function openMeteoTodayForecast(dailyForecastReport, todayString) {
 
 function wttrTodayForecast(report, todayString) {
   var days = report && report.weather ? report.weather : []
-  for (var i = 0; i < days.length; ++i) {
+  for (var i = 0; i < days.length && i < MAX_RESULTS; ++i) {
     if (String(days[i].date).slice(0, 10) === String(todayString || "")) return days[i]
   }
   return null
@@ -306,7 +314,7 @@ function openMeteoTodayHourlyForecast(dailyForecastReport, todayString) {
   if (!hourly || !hourly.time) return []
 
   var result = []
-  for (var i = 0; i < hourly.time.length; ++i) {
+  for (var i = 0; i < hourly.time.length && result.length < MAX_HOURLY; ++i) {
     var timestamp = String(hourly.time[i])
     if (timestamp.slice(0, 10) !== String(todayString || "")) continue
     var tempC = hourly.temperature_2m ? hourly.temperature_2m[i] : ""
@@ -325,7 +333,11 @@ function buildForecastTimeline(report, dailyForecastReport, todayString) {
   var days = openMeteoForecastTimeline(dailyForecastReport, todayString)
   if (days.length > 0) return days
   var wttrDays = report && report.weather ? report.weather : []
-  return wttrDays.filter(function(day) { return String(day.date).slice(0, 10) >= String(todayString || "") }).slice(0, 6)
+  var result = []
+  for (var i = 0; i < wttrDays.length && result.length < 6 && i < MAX_RESULTS; ++i) {
+    if (String(wttrDays[i].date).slice(0, 10) >= String(todayString || "")) result.push(wttrDays[i])
+  }
+  return result
 }
 
 function activityForecast(current, today) {
@@ -370,7 +382,7 @@ function dayIcon(day) {
 
   var best = day.hourly[0]
   var bestDist = 9999
-  for (var i = 0; i < day.hourly.length; ++i) {
+  for (var i = 0; i < day.hourly.length && i < MAX_HOURLY; ++i) {
     var t = parseInt(String(day.hourly[i].time || "0"), 10)
     var dist = Math.abs(t - 1200)
     if (dist < bestDist) {

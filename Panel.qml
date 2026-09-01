@@ -88,7 +88,7 @@ Panel {
   property int radarZoom: 7
   property bool activitiesExpanded: true
   property bool mapsExpanded: true
-  property string panelStatePath: Quickshell.env("HOME") + "/.local/state/omarchy/settings/weather-panel.json"
+  readonly property string helperPath: Quickshell.shellDir + "/weather-helper.py"
   // QML does not always track dependencies read indirectly from JavaScript
   // functions. Bump this when a new auto-detected report supplies map
   // coordinates so tile URL bindings are evaluated again.
@@ -124,10 +124,11 @@ Panel {
   }
 
   function savePanelState() {
-    panelStateFile.setText(JSON.stringify({
+    panelStateSaveProc.command = ["python3", root.helperPath, "write", "weather-panel.json", JSON.stringify({
       activitiesExpanded: activitiesExpanded,
       mapsExpanded: mapsExpanded
-    }) + "\n")
+    }) + "\n"]
+    panelStateSaveProc.running = true
   }
 
   // Tile Images keep evaluating their source binding while the section is
@@ -216,12 +217,12 @@ Panel {
 
   Process {
     id: radarGeocodeProc
-    command: ["curl", "-fsS", "--max-time", "5", "https://geocoding-api.open-meteo.com/v1/search?name=" + encodeURIComponent(root.configuredLocation) + "&count=10&language=en&format=json"]
+    command: ["python3", root.helperPath, "fetch", "https://geocoding-api.open-meteo.com/v1/search?name=" + encodeURIComponent(root.configuredLocation) + "&count=10&language=en&format=json", "5"]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
         try {
-          var results = JSON.parse(String(text || "")).results || []
+          var results = (JSON.parse(String(text || "")).results || []).slice(0, 10)
           var selected = results.length > 0 ? results[0] : null
           if (selected) {
             root.radarLatitude = String(selected.latitude)
@@ -245,13 +246,13 @@ Panel {
 
   Process {
     id: radarProc
-    command: ["curl", "-fsS", "--max-time", "8", "https://api.rainviewer.com/public/weather-maps.json"]
+    command: ["python3", root.helperPath, "fetch", "https://api.rainviewer.com/public/weather-maps.json", "8"]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
         try {
           var parsed = JSON.parse(String(text || ""))
-          var frames = parsed.radar && parsed.radar.past ? parsed.radar.past : []
+          var frames = parsed.radar && parsed.radar.past ? parsed.radar.past.slice(0, 10) : []
           if (frames.length > 0 && frames[frames.length - 1].path) {
             root.radarHost = Model.safeRadarHost(parsed.host)
             root.radarPath = Model.safeRadarPath(frames[frames.length - 1].path)
@@ -297,23 +298,31 @@ Panel {
     Qt.callLater(refresh)
   }
 
-  property FileView locationFile: FileView {
-    path: Quickshell.env("HOME") + "/.local/state/omarchy/settings/weather.json"
-    watchChanges: true
-    printErrors: false
-    onFileChanged: reload()
-    onLoaded: root.configuredLocationState = Model.parseLocationFile(text())
-    onLoadFailed: root.configuredLocationState = Model.parseLocationFile("")
+  Process {
+    id: locationFile
+    command: ["python3", root.helperPath, "read", "weather.json"]
+    function reload() { if (!running) running = true }
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: root.configuredLocationState = Model.parseLocationFile(text)
+    }
+    onExited: function(exitCode) {
+      if (exitCode !== 0) root.configuredLocationState = Model.parseLocationFile("")
+    }
   }
 
-  FileView {
+  Process {
     id: panelStateFile
-    path: root.panelStatePath
-    watchChanges: true
-    atomicWrites: true
-    printErrors: false
-    onLoaded: root.loadPanelState(text())
-    onFileChanged: reload()
+    command: ["python3", root.helperPath, "read", "weather-panel.json"]
+    function reload() { if (!running) running = true }
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: root.loadPanelState(text)
+    }
+  }
+
+  Process {
+    id: panelStateSaveProc
   }
 
   // The first read can race shell startup (observed sporadically), leaving a
@@ -359,7 +368,7 @@ Panel {
   // Auto-refresh interval in minutes; clamped to a sane minimum.
   readonly property int refreshMinutes: Math.max(1, parseInt(setting("refreshMinutes", 15), 10) || 15)
 
-  readonly property string reportLocation:  configuredLocation || wttrLocation || (areaInfo && areaInfo.areaName && areaInfo.areaName[0] ? areaInfo.areaName[0].value : "")
+  readonly property string reportLocation:  (configuredLocation || wttrLocation || (areaInfo && areaInfo.areaName && areaInfo.areaName[0] ? String(areaInfo.areaName[0].value || "") : "")).slice(0, 128)
   // Keep the location control available before the first location response.
   readonly property string locationDisplay: reportLocation || "Set location"
   readonly property string reportTempNum:   current ? String(useImperial ? current.temp_F : current.temp_C) : ""
@@ -404,7 +413,7 @@ Panel {
       + "&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code,is_day"
       + "&forecast_days=6"
       + "&timezone=auto"
-    dailyForecastProc.command = ["curl", "-fsS", "--max-time", "5", url]
+    dailyForecastProc.command = ["python3", root.helperPath, "fetch", url, "5"]
     dailyForecastProc.running = true
   }
 
@@ -495,8 +504,8 @@ Panel {
 
   function startGeocode() {
     geocodeActiveQuery = geocodePendingQuery
-    geocodeProc.command = ["curl", "-fsS", "--max-time", "5",
-      "https://geocoding-api.open-meteo.com/v1/search?name=" + encodeURIComponent(geocodeActiveQuery) + "&count=5&language=en&format=json"]
+    geocodeProc.command = ["python3", root.helperPath, "fetch",
+      "https://geocoding-api.open-meteo.com/v1/search?name=" + encodeURIComponent(geocodeActiveQuery) + "&count=5&language=en&format=json", "5"]
     geocodeProc.running = true
   }
 
@@ -587,7 +596,7 @@ Panel {
 
   Process {
     id: forecastProc
-    command: ["curl", "-fsS", "--max-time", "10", "https://wttr.in/" + root.locationQuery + "?format=j1"]
+    command: ["python3", root.helperPath, "fetch", "https://wttr.in/" + root.locationQuery + "?format=j1", "10"]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
@@ -696,7 +705,7 @@ Panel {
     onExited: function(exitCode) {
       if (exitCode !== 0 || !root.savingLocation) return
 
-      // FileView handles changed locations. Explicitly refresh here too so
+      // The state helper handles changed locations. Explicitly refresh here too so
       // saving the already-active location cannot strand the spinner.
       locationFile.reload()
       if (!root.savingLocationQueryStarted) {
@@ -712,13 +721,13 @@ Panel {
 
   Process {
     id: locationProc
-    command: ["curl", "-fsS", "--max-time", "4", "https://wttr.in/?format=%l"]
+    command: ["python3", root.helperPath, "fetch", "https://wttr.in/?format=%l", "4"]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
         var raw = String(text || "").trim()
         if (!raw) return
-        root.wttrLocation = raw.split(",")[0]
+        root.wttrLocation = raw.split(",")[0].slice(0, 128)
       }
     }
   }
@@ -806,6 +815,7 @@ Panel {
             Text {
               id: tempBig
               text: root.reportTempNum || "—"
+              textFormat: Text.PlainText
               color: root.bar.foreground
               font.family: root.bar.fontFamily
               // Hero temperature read-out, scaled from the active theme.
@@ -827,6 +837,7 @@ Panel {
             }
             Text {
               text: root.current ? root.tempUnit : ""
+              textFormat: Text.PlainText
               color: root.bar.foreground
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.display
@@ -867,6 +878,7 @@ Panel {
                 id: cityName
                 anchors.fill: parent
                 text: root.locationDisplay.toUpperCase()
+                textFormat: Text.PlainText
                 color: Qt.darker(root.bar.foreground, 1.4)
                 font.family: root.bar.fontFamily
                 font.pixelSize: Style.font.body
@@ -966,6 +978,7 @@ Panel {
               }
               Text {
                 text: root.reportFeels
+                textFormat: Text.PlainText
                 color: root.bar.foreground
                 font.family: root.bar.fontFamily
                 font.pixelSize: Style.font.title
@@ -983,6 +996,7 @@ Panel {
               }
               Text {
                 text: root.reportWind
+                textFormat: Text.PlainText
                 color: root.bar.foreground
                 font.family: root.bar.fontFamily
                 font.pixelSize: Style.font.title
@@ -1012,6 +1026,7 @@ Panel {
               }
               Text {
                 text: root.reportHumidity
+                textFormat: Text.PlainText
                 color: root.bar.foreground
                 font.family: root.bar.fontFamily
                 font.pixelSize: Style.font.title
@@ -1060,6 +1075,7 @@ Panel {
 
               Text {
                 text: modelData.name
+                textFormat: Text.PlainText
                 color: index === root.suggestionIndex ? Style.hoverStateColor(root.bar.foreground, Color.accent) : root.bar.foreground
                 font.family: root.bar.fontFamily
                 font.pixelSize: Style.font.body
@@ -1067,6 +1083,7 @@ Panel {
               Text {
                 visible: text !== ""
                 text: modelData.description
+                textFormat: Text.PlainText
                 color: Qt.darker(root.bar.foreground, 1.5)
                 font.family: root.bar.fontFamily
                 font.pixelSize: Style.font.bodySmall
@@ -1147,6 +1164,7 @@ Panel {
               Text {
                 width: Style.space(100)
                 text: root.forecastDayLabel(modelData.date)
+                textFormat: Text.PlainText
                 color: root.bar.foreground
                 font.family: root.bar.fontFamily
                 font.pixelSize: Style.font.body
@@ -1158,6 +1176,7 @@ Panel {
                 width: Style.space(64)
                 opacity: root.showDailyDetails(modelData.date) ? 1 : 0
                 text: root.forecastPrecipitation(modelData) || "—"
+                textFormat: Text.PlainText
                 color: Qt.darker(root.bar.foreground, 1.3)
                 font.family: root.bar.fontFamily
                 font.pixelSize: Style.font.bodySmall
@@ -1196,6 +1215,7 @@ Panel {
                 width: Style.space(140)
                 transform: Translate { x: -Style.space(50) }
                 text: root.bareTempForDay(modelData, "max") + " / " + root.bareTempForDay(modelData, "min")
+                textFormat: Text.PlainText
                 color: root.bar.foreground
                 font.family: root.bar.fontFamily
                 font.pixelSize: Style.font.body
@@ -1243,12 +1263,14 @@ Panel {
 
             Text {
               text: root.todayForecast ? root.dayName(root.todayForecast.date) : ""
+              textFormat: Text.PlainText
               color: root.bar.foreground
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.body
             }
             Text {
               text: root.todayForecast ? root.bareTempForDay(root.todayForecast, "max") + " / " + root.bareTempForDay(root.todayForecast, "min") : ""
+              textFormat: Text.PlainText
               color: Qt.darker(root.bar.foreground, 1.3)
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.body
@@ -1261,6 +1283,7 @@ Panel {
             width: Style.space(70)
             visible: root.forecastPrecipitation(root.todayForecast) !== ""
             text: root.forecastPrecipitation(root.todayForecast)
+            textFormat: Text.PlainText
             color: Qt.darker(root.bar.foreground, 1.3)
             font.family: root.bar.fontFamily
             font.pixelSize: Style.font.bodySmall
@@ -1311,6 +1334,7 @@ Panel {
                   Text {
                     width: parent.width
                     text: root.hourlyTime(modelData)
+                    textFormat: Text.PlainText
                     color: Qt.darker(root.bar.foreground, 1.4)
                     font.family: root.bar.fontFamily
                     font.pixelSize: Style.font.caption
@@ -1327,6 +1351,7 @@ Panel {
                   Text {
                     width: parent.width
                     text: root.hourlyTemperature(modelData)
+                    textFormat: Text.PlainText
                     color: root.bar.foreground
                     font.family: root.bar.fontFamily
                     font.pixelSize: Style.font.bodySmall
