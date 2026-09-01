@@ -42,7 +42,8 @@ function safeRadarHost(value) {
 
 function safeRadarPath(value) {
   var path = String(value || "")
-  return /^\/v2\/radar\/[0-9]+$/.test(path) ? path : ""
+  // Current RainViewer frame IDs are hexadecimal strings, not timestamps.
+  return /^\/v2\/radar\/[A-Za-z0-9_-]+$/.test(path) ? path : ""
 }
 
 // wttr.in has historically returned fields at the root, but a newer response
