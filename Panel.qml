@@ -88,7 +88,8 @@ Panel {
   property int radarZoom: 7
   property bool activitiesExpanded: true
   property bool mapsExpanded: true
-  readonly property string helperPath: Quickshell.shellDir + "/weather-helper.py"
+  // shellDir is the Omarchy shell root, not this plugin's directory.
+  readonly property string helperPath: Qt.resolvedUrl("weather-helper.py").replace(/^file:\/\//, "")
   // QML does not always track dependencies read indirectly from JavaScript
   // functions. Bump this when a new auto-detected report supplies map
   // coordinates so tile URL bindings are evaluated again.
