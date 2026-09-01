@@ -3,13 +3,41 @@
 
 import os
 import pathlib
+import secrets
 import subprocess
 import sys
-import tempfile
 
 MAX_RESPONSE = 256 * 1024
 MAX_STATE = 64 * 1024
 STATE_NAMES = {"weather.json", "weather-panel.json"}
+
+
+def _check_directory(fd, label):
+    info = os.fstat(fd)
+    if not stat_is_directory(info.st_mode) or info.st_uid != os.getuid():
+        raise OSError("unsafe " + label)
+    return fd
+
+
+def _open_directory(parent_fd, name, create):
+    flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC
+    try:
+        fd = os.open(name, flags, dir_fd=parent_fd)
+    except FileNotFoundError:
+        if not create:
+            raise
+        try:
+            os.mkdir(name, 0o700, dir_fd=parent_fd)
+        except FileExistsError:
+            pass
+        fd = os.open(name, flags, dir_fd=parent_fd)
+    try:
+        _check_directory(fd, "state directory")
+        os.fchmod(fd, 0o700)
+        return fd
+    except BaseException:
+        os.close(fd)
+        raise
 
 
 def state_dir():
@@ -17,41 +45,35 @@ def state_dir():
     if not home_value:
         raise OSError("HOME is not set")
     home = pathlib.Path(home_value).resolve()
-    home_info = os.stat(home)
-    if not pathlib.Path(home).is_dir() or home_info.st_uid != os.getuid():
-        raise OSError("unsafe home directory")
-    path = home / ".local" / "state" / "omarchy" / "settings"
-    current = home
-    for part in path.relative_to(home).parts:
-        current = current / part
-        info = os.lstat(current) if current.exists() or current.is_symlink() else None
-        if info and (pathlib.Path(current).is_symlink() or not pathlib.Path(current).is_dir()):
-            raise OSError("state path is not a directory")
-        if info and info.st_uid != os.getuid():
-            raise OSError("state directory is not owned by the user")
-    if path.exists() or path.is_symlink():
-        if path.is_symlink() or not path.is_dir():
-            raise OSError("state path is not a directory")
-        if os.stat(path).st_uid != os.getuid():
-            raise OSError("state directory is not owned by the user")
-        if os.stat(path).st_mode & 0o077:
-            os.chmod(path, 0o700)
-    return path
+    home_fd = os.open(
+        home,
+        os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC,
+    )
+    current_fd = home_fd
+    try:
+        _check_directory(home_fd, "home directory")
+        for part in (".local", "state", "omarchy", "settings"):
+            next_fd = _open_directory(current_fd, part, create=True)
+            os.close(current_fd)
+            current_fd = next_fd
+        result_fd = current_fd
+        current_fd = -1
+        return result_fd
+    except BaseException:
+        if current_fd != -1:
+            os.close(current_fd)
+        raise
 
 
 def state_path(name):
     if name not in STATE_NAMES:
         raise ValueError("invalid state name")
-    directory = state_dir()
-    path = directory / name
-    if path.is_symlink():
-        raise OSError("state file is a symlink")
-    return path
+    return name
 
 
-def validate_target(path):
+def validate_target(directory_fd, name):
     try:
-        info = os.lstat(path)
+        info = os.stat(name, dir_fd=directory_fd, follow_symlinks=False)
     except FileNotFoundError:
         return
     if not stat_is_regular(info.st_mode) or info.st_uid != os.getuid():
@@ -61,23 +83,30 @@ def validate_target(path):
 
 
 def read_state(name):
-    path = state_path(name)
+    name = state_path(name)
+    directory_fd = state_dir()
     try:
-        info = os.lstat(path)
-    except FileNotFoundError:
-        return
-    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
-    try:
-        info = os.fstat(fd)
-        if not stat_is_regular(info.st_mode) or info.st_uid != os.getuid():
-            raise OSError("unsafe state file")
-        if info.st_size > MAX_STATE:
-            raise OSError("state file is too large")
-        # Repair legacy user-owned state files before exposing their contents.
-        os.fchmod(fd, 0o600)
-        data = os.read(fd, MAX_STATE + 1)
+        try:
+            fd = os.open(
+                name,
+                os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW | os.O_CLOEXEC,
+                dir_fd=directory_fd,
+            )
+        except FileNotFoundError:
+            return
+        try:
+            info = os.fstat(fd)
+            if not stat_is_regular(info.st_mode) or info.st_uid != os.getuid():
+                raise OSError("unsafe state file")
+            if info.st_size > MAX_STATE:
+                raise OSError("state file is too large")
+            # Repair legacy user-owned state files before exposing their contents.
+            os.fchmod(fd, 0o600)
+            data = os.read(fd, MAX_STATE + 1)
+        finally:
+            os.close(fd)
     finally:
-        os.close(fd)
+        os.close(directory_fd)
     if len(data) > MAX_STATE:
         raise OSError("state file is too large")
     sys.stdout.buffer.write(data)
@@ -87,26 +116,42 @@ def stat_is_regular(mode):
     return (mode & 0o170000) == 0o100000
 
 
+def stat_is_directory(mode):
+    return (mode & 0o170000) == 0o040000
+
+
 def write_state(name, data):
-    path = state_path(name)
+    name = state_path(name)
     if len(data) > MAX_STATE:
         raise OSError("state data is too large")
-    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-    os.chmod(path.parent, 0o700)
-    validate_target(path)
-    directory_fd = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC)
+    directory_fd = state_dir()
     fd = -1
     temporary = None
     try:
-        fd, temporary = tempfile.mkstemp(prefix="." + name + ".", dir=path.parent)
+        validate_target(directory_fd, name)
+        for _ in range(100):
+            temporary = "." + name + "." + secrets.token_hex(16)
+            try:
+                fd = os.open(
+                    temporary,
+                    os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW | os.O_CLOEXEC,
+                    0o600,
+                    dir_fd=directory_fd,
+                )
+                break
+            except FileExistsError:
+                temporary = None
+        else:
+            raise OSError("could not create temporary state file")
         os.fchmod(fd, 0o600)
         offset = 0
         while offset < len(data):
             offset += os.write(fd, data[offset:])
         os.fsync(fd)
-        os.replace(temporary, name, dst_dir_fd=directory_fd)
-        os.fchmod(fd, 0o600)
+        os.replace(temporary, name, src_dir_fd=directory_fd, dst_dir_fd=directory_fd)
+        temporary = None
         os.close(fd)
+        fd = -1
         os.fsync(directory_fd)
     finally:
         try:
@@ -115,7 +160,7 @@ def write_state(name, data):
             pass
         if temporary:
             try:
-                os.unlink(temporary)
+                os.unlink(temporary, dir_fd=directory_fd)
             except FileNotFoundError:
                 pass
         os.close(directory_fd)
