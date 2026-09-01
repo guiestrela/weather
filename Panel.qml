@@ -90,6 +90,7 @@ Panel {
   property bool mapsExpanded: true
   // shellDir is the Omarchy shell root, not this plugin's directory.
   readonly property string helperPath: Qt.resolvedUrl("weather-helper.py").replace(/^file:\/\//, "")
+  readonly property string pythonPath: "/usr/bin/python3"
   // QML does not always track dependencies read indirectly from JavaScript
   // functions. Bump this when a new auto-detected report supplies map
   // coordinates so tile URL bindings are evaluated again.
@@ -125,7 +126,7 @@ Panel {
   }
 
   function savePanelState() {
-    panelStateSaveProc.command = ["python3", root.helperPath, "write", "weather-panel.json", JSON.stringify({
+    panelStateSaveProc.command = [root.pythonPath, root.helperPath, "write", "weather-panel.json", JSON.stringify({
       activitiesExpanded: activitiesExpanded,
       mapsExpanded: mapsExpanded
     }) + "\n"]
@@ -218,7 +219,7 @@ Panel {
 
   Process {
     id: radarGeocodeProc
-    command: ["python3", root.helperPath, "fetch", "https://geocoding-api.open-meteo.com/v1/search?name=" + encodeURIComponent(root.configuredLocation) + "&count=10&language=en&format=json", "5"]
+    command: [root.pythonPath, root.helperPath, "fetch", "https://geocoding-api.open-meteo.com/v1/search?name=" + encodeURIComponent(root.configuredLocation) + "&count=10&language=en&format=json", "5"]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
@@ -247,7 +248,7 @@ Panel {
 
   Process {
     id: radarProc
-    command: ["python3", root.helperPath, "fetch", "https://api.rainviewer.com/public/weather-maps.json", "8"]
+    command: [root.pythonPath, root.helperPath, "fetch", "https://api.rainviewer.com/public/weather-maps.json", "8"]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
@@ -301,7 +302,7 @@ Panel {
 
   Process {
     id: locationFile
-    command: ["python3", root.helperPath, "read", "weather.json"]
+    command: [root.pythonPath, root.helperPath, "read", "weather.json"]
     function reload() { if (!running) running = true }
     stdout: StdioCollector {
       waitForEnd: true
@@ -314,7 +315,7 @@ Panel {
 
   Process {
     id: panelStateFile
-    command: ["python3", root.helperPath, "read", "weather-panel.json"]
+    command: [root.pythonPath, root.helperPath, "read", "weather-panel.json"]
     function reload() { if (!running) running = true }
     stdout: StdioCollector {
       waitForEnd: true
@@ -414,7 +415,7 @@ Panel {
       + "&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code,is_day"
       + "&forecast_days=6"
       + "&timezone=auto"
-    dailyForecastProc.command = ["python3", root.helperPath, "fetch", url, "5"]
+    dailyForecastProc.command = [root.pythonPath, root.helperPath, "fetch", url, "5"]
     dailyForecastProc.running = true
   }
 
@@ -505,7 +506,7 @@ Panel {
 
   function startGeocode() {
     geocodeActiveQuery = geocodePendingQuery
-    geocodeProc.command = ["python3", root.helperPath, "fetch",
+    geocodeProc.command = [root.pythonPath, root.helperPath, "fetch",
       "https://geocoding-api.open-meteo.com/v1/search?name=" + encodeURIComponent(geocodeActiveQuery) + "&count=5&language=en&format=json", "5"]
     geocodeProc.running = true
   }
@@ -597,7 +598,7 @@ Panel {
 
   Process {
     id: forecastProc
-    command: ["python3", root.helperPath, "fetch", "https://wttr.in/" + root.locationQuery + "?format=j1", "10"]
+    command: [root.pythonPath, root.helperPath, "fetch", "https://wttr.in/" + root.locationQuery + "?format=j1", "10"]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
@@ -722,7 +723,7 @@ Panel {
 
   Process {
     id: locationProc
-    command: ["python3", root.helperPath, "fetch", "https://wttr.in/?format=%l", "4"]
+    command: [root.pythonPath, root.helperPath, "fetch", "https://wttr.in/?format=%l", "4"]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
