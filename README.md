@@ -21,6 +21,10 @@ instructions are provided below.
 
 ![Omarchy Weather panel showing imperial units, forecast, activity recommendations, and radar map](preview2.png)
 
+### Detailed panel view
+
+![Omarchy Weather panel showing the detailed forecast, activity recommendations, and radar map](preview3.png)
+
 ## Features
 
 - Current temperature and weather icon.
