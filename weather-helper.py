@@ -2,7 +2,6 @@
 """Small boundary helper for untrusted HTTP and local state data."""
 
 import os
-import pathlib
 import secrets
 import subprocess
 import sys
@@ -12,14 +11,20 @@ MAX_STATE = 64 * 1024
 STATE_NAMES = {"weather.json", "weather-panel.json"}
 
 
-def _check_directory(fd, label):
+def _check_directory(fd, label, owner_required=True):
     info = os.fstat(fd)
-    if not stat_is_directory(info.st_mode) or info.st_uid != os.getuid():
+    if not stat_is_directory(info.st_mode):
+        raise OSError("unsafe " + label)
+    if owner_required and info.st_uid != os.getuid():
+        raise OSError("unsafe " + label)
+    # A directory in the path must not be writable by another user.  This
+    # permits ordinary shared modes such as 0755 without modifying them.
+    if info.st_mode & 0o022:
         raise OSError("unsafe " + label)
     return fd
 
 
-def _open_directory(parent_fd, name, create):
+def _open_directory(parent_fd, name, create, private=False, owner_required=True):
     flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC
     try:
         fd = os.open(name, flags, dir_fd=parent_fd)
@@ -32,8 +37,9 @@ def _open_directory(parent_fd, name, create):
             pass
         fd = os.open(name, flags, dir_fd=parent_fd)
     try:
-        _check_directory(fd, "state directory")
-        os.fchmod(fd, 0o700)
+        _check_directory(fd, "state directory", owner_required=owner_required)
+        if private:
+            os.fchmod(fd, 0o700)
         return fd
     except BaseException:
         os.close(fd)
@@ -42,18 +48,39 @@ def _open_directory(parent_fd, name, create):
 
 def state_dir():
     home_value = os.environ.get("HOME", "")
-    if not home_value:
+    if not home_value or not home_value.startswith("/"):
         raise OSError("HOME is not set")
-    home = pathlib.Path(home_value).resolve()
-    home_fd = os.open(
-        home,
-        os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC,
+
+    # Walk HOME from the trusted root descriptor.  In particular, do not
+    # resolve HOME first: resolving would follow a mutable symlink chain
+    # before the no-follow, descriptor-relative checks could begin.
+    root_fd = os.open(
+        "/", os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC
     )
-    current_fd = home_fd
+    current_fd = root_fd
     try:
-        _check_directory(home_fd, "home directory")
+        parts = [part for part in home_value.split("/") if part]
+        if any(part in (".", "..") for part in parts):
+            raise OSError("unsafe home directory")
+        for index, part in enumerate(parts):
+            next_fd = _open_directory(
+                current_fd,
+                part,
+                create=False,
+                # Only HOME itself must belong to the user; trusted system
+                # ancestors such as /home may be root-owned.
+                owner_required=index == len(parts) - 1,
+            )
+            os.close(current_fd)
+            current_fd = next_fd
+        _check_directory(current_fd, "home directory")
         for part in (".local", "state", "omarchy", "settings"):
-            next_fd = _open_directory(current_fd, part, create=True)
+            next_fd = _open_directory(
+                current_fd,
+                part,
+                create=True,
+                private=part == "settings",
+            )
             os.close(current_fd)
             current_fd = next_fd
         result_fd = current_fd
