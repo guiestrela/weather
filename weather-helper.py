@@ -73,6 +73,8 @@ def read_state(name):
             raise OSError("unsafe state file")
         if info.st_size > MAX_STATE:
             raise OSError("state file is too large")
+        # Repair legacy user-owned state files before exposing their contents.
+        os.fchmod(fd, 0o600)
         data = os.read(fd, MAX_STATE + 1)
     finally:
         os.close(fd)
