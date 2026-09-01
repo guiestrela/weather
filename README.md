@@ -74,6 +74,15 @@ Click the weather widget to open the panel.
 
 The plugin uses Open-Meteo for daily forecasts and wttr.in for current conditions and as a fallback.
 
+## Privacy and network access
+
+The plugin does not require an account or API key, but it does contact public
+third-party services. When a location is configured, its name and/or
+coordinates are sent to Open-Meteo and wttr.in for weather data, and to
+RainViewer, Esri World Imagery, and CARTO to load map imagery and labels. When
+no location is configured, wttr.in is used for IP-based location detection.
+Requests use HTTPS. The plugin does not send credentials or store API keys.
+
 ## Configuration
 
 Settings are read through the Omarchy module system. Available options include:

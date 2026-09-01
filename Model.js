@@ -32,6 +32,27 @@ function wttrLocationQuery(location, latitude, longitude) {
   return name === "" ? "" : encodeURIComponent(name)
 }
 
+// RainViewer supplies the tile host and frame path in its metadata response.
+// Keep those values constrained to the documented HTTPS endpoint shape before
+// using them as image URLs in QML.
+function safeRadarHost(value) {
+  var host = String(value || "").replace(/\/+$/, "")
+  return /^https:\/\/(?:[A-Za-z0-9-]+\.)*rainviewer\.com(?::443)?$/.test(host) ? host : "https://tilecache.rainviewer.com"
+}
+
+function safeRadarPath(value) {
+  var path = String(value || "")
+  return /^\/v2\/radar\/[0-9]+$/.test(path) ? path : ""
+}
+
+// wttr.in has historically returned fields at the root, but a newer response
+// shape may wrap them in `data`. Normalize both forms at the boundary.
+function normalizeWttrResponse(value) {
+  if (!value || typeof value !== "object") return null
+  if (value.current_condition || value.nearest_area || value.weather) return value
+  return value.data && typeof value.data === "object" ? value.data : value
+}
+
 // Open-Meteo geocoding response → suggestion rows for the location picker.
 function parseGeocodingResults(raw) {
   try {
@@ -394,6 +415,9 @@ if (typeof module !== "undefined") {
   module.exports = {
     parseLocationFile: parseLocationFile,
     wttrLocationQuery: wttrLocationQuery,
+    safeRadarHost: safeRadarHost,
+    safeRadarPath: safeRadarPath,
+    normalizeWttrResponse: normalizeWttrResponse,
     parseGeocodingResults: parseGeocodingResults,
     locationCommit: locationCommit,
     isFutureForecastDate: isFutureForecastDate,

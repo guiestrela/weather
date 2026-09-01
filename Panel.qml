@@ -250,8 +250,9 @@ Panel {
           var parsed = JSON.parse(String(text || ""))
           var frames = parsed.radar && parsed.radar.past ? parsed.radar.past : []
           if (frames.length > 0 && frames[frames.length - 1].path) {
-            root.radarHost = parsed.host || "https://tilecache.rainviewer.com"
-            root.radarPath = frames[frames.length - 1].path
+            root.radarHost = Model.safeRadarHost(parsed.host)
+            root.radarPath = Model.safeRadarPath(frames[frames.length - 1].path)
+            if (root.radarPath === "") radarRetryTimer.restart()
           } else {
             radarRetryTimer.restart()
           }
@@ -593,7 +594,8 @@ Panel {
           return
         }
         try {
-          var parsed = JSON.parse(raw)
+          var parsed = Model.normalizeWttrResponse(JSON.parse(raw))
+          if (!parsed) throw new Error("Invalid wttr response")
           root.report = parsed
           root.mapRevision++
           if (!root.hasConfiguredCoordinates)
@@ -790,9 +792,8 @@ Panel {
             text: root.label || "—"
             color: root.bar.foreground
             font.family: root.bar.fontFamily
-            // Decorative condition emoji; intentionally larger than the
-            // Style.font.* scale's displayLarge (28).
-            font.pixelSize: 64
+            // Decorative condition glyph, scaled from the active theme.
+            font.pixelSize: Style.font.displayLarge * 2.25
           }
 
           Row {
@@ -804,9 +805,8 @@ Panel {
               text: root.reportTempNum || "—"
               color: root.bar.foreground
               font.family: root.bar.fontFamily
-              // Hero temperature read-out; deliberately oversized, outside
-              // the Style.font.* scale.
-              font.pixelSize: 56
+              // Hero temperature read-out, scaled from the active theme.
+              font.pixelSize: Style.font.displayLarge * 2
               font.bold: true
 
               MouseArea {
