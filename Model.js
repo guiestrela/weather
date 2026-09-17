@@ -238,6 +238,56 @@ function shouldUseImperial(unitOverride, localeName, countryName, measurementSys
   return localeUsesImperial(localeName)
 }
 
+// Wind speed unit is independent of the temperature unit: "auto" follows
+// useImperial (mph/km-h), otherwise the explicit choice always wins.
+function resolvedWindUnit(unitOverride, useImperial) {
+  var unit = normalizedUnit(unitOverride)
+  if (unit === "kmh" || unit === "mph" || unit === "ms" || unit === "kn" || unit === "bf") return unit
+  return useImperial ? "mph" : "kmh"
+}
+
+function windUnitLabel(unit) {
+  switch (unit) {
+    case "mph": return "mph"
+    case "ms": return "m/s"
+    case "kn": return "kn"
+    case "bf": return "Bft"
+    default: return "km/h"
+  }
+}
+
+// Standard Beaufort scale, upper bound of each force's km/h range.
+var BEAUFORT_KMPH_UPPER_BOUNDS = [1, 5, 11, 19, 28, 38, 49, 61, 74, 88, 102, 117]
+
+function beaufortForce(kmph) {
+  for (var force = 0; force < BEAUFORT_KMPH_UPPER_BOUNDS.length; force++) {
+    if (kmph <= BEAUFORT_KMPH_UPPER_BOUNDS[force]) return force
+  }
+  return 12
+}
+
+function windSpeedFromKmph(kmph, unit) {
+  var n = parseFloat(String(kmph))
+  if (isNaN(n)) return ""
+  switch (unit) {
+    case "mph": return roundedTemp(n * 0.621371)
+    case "ms": return roundedTemp(n / 3.6)
+    case "kn": return roundedTemp(n / 1.852)
+    case "bf": return String(beaufortForce(n))
+    default: return roundedTemp(n)
+  }
+}
+
+// `current` carries windspeedKmph from both wttr.in and the Open-Meteo
+// adapter, so every source can be converted to any displayed unit from that
+// one shared baseline.
+function formatWindSpeed(current, unitOverride, useImperial) {
+  if (!current) return ""
+  var unit = resolvedWindUnit(unitOverride, useImperial)
+  var value = windSpeedFromKmph(current.windspeedKmph, unit)
+  return value === "" ? "" : value + " " + windUnitLabel(unit)
+}
+
 function dayName(dateString, formatter) {
   if (!dateString) return ""
   var d = new Date(dateString + "T12:00:00")
@@ -530,6 +580,10 @@ if (typeof module !== "undefined") {
     timeZoneUsesImperial: timeZoneUsesImperial,
     countryUsesImperial: countryUsesImperial,
     shouldUseImperial: shouldUseImperial,
+    resolvedWindUnit: resolvedWindUnit,
+    windUnitLabel: windUnitLabel,
+    windSpeedFromKmph: windSpeedFromKmph,
+    formatWindSpeed: formatWindSpeed,
     dayName: dayName,
     openMeteoForecastDays: openMeteoForecastDays,
     openMeteoForecastTimeline: openMeteoForecastTimeline,

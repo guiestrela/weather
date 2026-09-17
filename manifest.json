@@ -19,6 +19,7 @@
     "settingsForm": "weatherSettings",
     "defaults": {
       "unit": "auto",
+      "windUnit": "auto",
       "refreshMinutes": 15
     },
     "schema": [
@@ -42,6 +43,39 @@
         ],
         "defaultValue": "auto",
         "description": "Use the system default, Celsius (°C), or Fahrenheit (°F)."
+      },
+      {
+        "key": "windUnit",
+        "type": "enum",
+        "label": "Wind speed unit",
+        "options": [
+          {
+            "value": "auto",
+            "label": "Follow temperature unit"
+          },
+          {
+            "value": "kmh",
+            "label": "Kilometers per hour (km/h)"
+          },
+          {
+            "value": "mph",
+            "label": "Miles per hour (mph)"
+          },
+          {
+            "value": "ms",
+            "label": "Meters per second (m/s)"
+          },
+          {
+            "value": "kn",
+            "label": "Knots (kn)"
+          },
+          {
+            "value": "bf",
+            "label": "Beaufort (Bft)"
+          }
+        ],
+        "defaultValue": "auto",
+        "description": "Choose km/h, mph, m/s, knots, or the Beaufort scale, independent of the temperature unit."
       },
       {
         "key": "refreshMinutes",

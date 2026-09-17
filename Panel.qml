@@ -122,6 +122,7 @@ Panel {
       if (state && typeof state === "object") {
         if (state.activitiesExpanded !== undefined) activitiesExpanded = state.activitiesExpanded !== false
         if (state.mapsExpanded !== undefined) mapsExpanded = state.mapsExpanded !== false
+        if (state.windUnitOverride !== undefined) windUnitOverride = String(state.windUnitOverride || "")
       }
     } catch (e) {
       // Missing or invalid state keeps the expanded defaults.
@@ -131,7 +132,8 @@ Panel {
   function savePanelState() {
     panelStateSaveProc.command = [root.pythonPath, root.helperPath, "write", "weather-panel.json", JSON.stringify({
       activitiesExpanded: activitiesExpanded,
-      mapsExpanded: mapsExpanded
+      mapsExpanded: mapsExpanded,
+      windUnitOverride: windUnitOverride
     }) + "\n"]
     panelStateSaveProc.running = true
   }
@@ -402,8 +404,24 @@ Panel {
   readonly property string reportTempNum:   current ? String(useImperial ? current.temp_F : current.temp_C) : ""
   readonly property string tempUnit:        "°" + (useImperial ? "F" : "C")
   readonly property string reportFeels:     current ? formatTemp(useImperial ? current.FeelsLikeF : current.FeelsLikeC) : ""
-  readonly property string reportWind:      current ? (useImperial ? (current.windspeedMiles + " mph") : (current.windspeedKmph + " km/h")) : ""
+  // Clicking the wind value cycles this session-local override; empty means
+  // "follow the windUnit setting" (see cycleWindUnit()).
+  property string windUnitOverride: ""
+  readonly property string reportWind:      current ? Model.formatWindSpeed(current, root.windUnitOverride || setting("windUnit", "auto"), useImperial) : ""
   readonly property string reportHumidity:  current ? (current.humidity + "%") : ""
+
+  function cycleWindUnit() {
+    var order = ["kmh", "mph", "ms", "kn", "bf"]
+    var active = Model.resolvedWindUnit(root.windUnitOverride || setting("windUnit", "auto"), root.useImperial)
+    root.windUnitOverride = order[(order.indexOf(active) + 1) % order.length]
+    root.savePanelState()
+  }
+
+  // Timestamp of the last successful fetch (either source), shown next to
+  // the location label. A plain string rather than a Date so the hero row
+  // doesn't need to re-derive formatting on every repaint.
+  property string lastUpdatedText: ""
+  function markUpdated() { lastUpdatedText = Qt.formatTime(new Date(), "HH:mm") }
 
   function refresh() {
     // Each full refresh cycle gets a fresh retry budget, so an earlier
@@ -644,6 +662,7 @@ Panel {
           var parsed = Model.normalizeWttrResponse(JSON.parse(raw))
           if (!parsed) throw new Error("Invalid wttr response")
           root.report = parsed
+          root.markUpdated()
           root.mapRevision++
           if (!root.hasConfiguredCoordinates)
             root.label = Model.provisionalCurrentIcon(parsed.current_condition && parsed.current_condition[0], root.label)
@@ -705,6 +724,7 @@ Panel {
           var parsed = JSON.parse(raw)
           var parsedCurrent = Model.openMeteoCurrentCondition(parsed)
           root.dailyForecastReport = parsed
+          root.markUpdated()
           root.label = Model.currentIcon(parsedCurrent, root.label)
           root.dailyForecastRetries = 0
           if (Model.weatherResponseCompletesSave(root.hasConfiguredCoordinates, "open-meteo"))
@@ -936,6 +956,15 @@ Panel {
 
           }
 
+          Text {
+            visible: !root.editingLocation && root.lastUpdatedText !== ""
+            text: "Updated " + root.lastUpdatedText
+            textFormat: Text.PlainText
+            color: Qt.darker(root.bar.foreground, 1.6)
+            font.family: root.bar.fontFamily
+            font.pixelSize: Style.font.caption
+          }
+
           Row {
             visible: root.editingLocation
             spacing: Style.space(6)
@@ -1044,11 +1073,12 @@ Panel {
                   id: windHover
                   anchors.fill: parent
                   hoverEnabled: true
-                  acceptedButtons: Qt.NoButton
+                  cursorShape: Qt.PointingHandCursor
+                  onClicked: root.cycleWindUnit()
 
                   PanelToolTip {
                     visible: windHover.containsMouse
-                    text: "Wind: " + root.reportWind
+                    text: "Wind: " + root.reportWind + " (click to change unit)"
                     fontFamily: root.bar.fontFamily
                   }
                 }
