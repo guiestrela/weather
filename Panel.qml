@@ -63,8 +63,14 @@ Panel {
   }
 
   function setCenterHoverRevealSuppressed(value) {
-    if (root.bar && "centerHoverRevealSuppressed" in root.bar)
-      root.bar.centerHoverRevealSuppressed = value
+    if (!root.bar) return
+    if (typeof root.bar._setCenterHoverRevealSuppressed === "function") {
+      root.bar._setCenterHoverRevealSuppressed(value)
+      return
+    }
+    if ("centerHoverRevealSuppressed" in root.bar) {
+      try { root.bar.centerHoverRevealSuppressed = value } catch (e) {}
+    }
   }
 
   // Parsed wttr.in j1 response. Kept on failure so stale data stays visible.
